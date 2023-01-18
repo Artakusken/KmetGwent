@@ -1,13 +1,14 @@
 import os
 import sys
 import pygame
-
+from Cards_Descriptions import descriptions
 pygame.init()
 
 
 class Card:
-    def __init__(self, name, base_power, image, armor, provision, card_type, *tags):
+    def __init__(self, name, base_power, image, armor, provision, card_type, fraction, *tags):
         self.name = name
+        self.fraction = fraction
         self.bp = base_power
         self.power = self.bp
         self.armor = armor
@@ -15,8 +16,15 @@ class Card:
         self.image_path = image
         self.tags = tags
         self.card_type = card_type
-        self.location = 0
-        self.desription = ""
+        self.row = None
+        self.column = None
+        self.field_position = [self.row, self.column]
+        if self.name in descriptions.keys():
+            self.description = descriptions[self.name]
+        else:
+            self.description = "EMPTY DESCRIPTION"
+        self.location = [0, None]  # 0 - deck, 1 - hand, 2 - field, 3 - dump. Second arg is for place in 0, 1 and 3
+        self.status = "in_deck"  # test variable which tell us card condition. Ex. chosen or used and etc
 
     def load_image(self, name, size):
         directory = os.path.join(name)
@@ -74,12 +82,31 @@ class Card:
                 self.display_cards_points(x, y, "S", "a", screen)
 
 
-class Leader:
-    def __init__(self, image, name, fraction, ):
-        pass
+class Leader(pygame.sprite.Sprite):
+    def __init__(self, animation, name, fraction, group, frame_n, x, y):
+        super().__init__(group)
+        self.frames = []
+        self.name = name
+        self.fraction = fraction
+        self.cur_frame = 0
+        self.frames_number = frame_n
+        self.rect = pygame.Rect(x, y, 212, 309)
+        self.load_image(animation)
 
+    def load_image(self, name):
+        directory = os.path.join('Animations', name + '\\')
+        for i in os.listdir(directory):
+            if os.path.isfile(directory + i):
+                image = pygame.image.load(directory + i)
+                self.frames.append(pygame.transform.scale(image, (212, 309)))
+            else:
+                print(f"Файл с изображением '{i}' не найден")
 
-# Warrior = Card('dfgd', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Warrior", "Support")
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % self.frames_number
+        self.image = self.frames[self.cur_frame]
+
+# Warrior = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
 # screen = pygame.display.set_mode((600, 600))
 # running = True
 # while running:

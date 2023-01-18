@@ -2,7 +2,7 @@ import pygame
 import os
 import sys
 
-from Cards import Card
+from Cards import Card, Leader
 
 pygame.init()
 
@@ -47,9 +47,8 @@ class AnimatedSprite(pygame.sprite.Sprite):
 all_sprites = pygame.sprite.Group()
 enemy_leader = pygame.sprite.Group()
 ally_leader = pygame.sprite.Group()
-ERoche = AnimatedSprite('Roche180png', ally_leader, 75, 70, 181)
-Roche = AnimatedSprite('Roche180png', enemy_leader, 75, 685, 181)
-
+ERoche = Leader("Roche180png", "Vernon Roche", "NR", enemy_leader, 181, 75, 70)
+Roche = Leader("Roche180png", "Vernon Roche", "NR", ally_leader, 181, 75, 685)
 size = 1920, 1080
 screen = pygame.display.set_mode(size)
 running = True
@@ -62,7 +61,7 @@ sbros = load_image('Field\Dump.png', 'S')
 moneta = load_image('Field\RCoin.png', 'K')
 test_rect = test.get_rect()
 test_srect = s_test.get_rect()
-Warrior = Card('dfgd', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Warrior", "Support")
+Warrior = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
 
 
 def draw_text(surf, text, size, x, y):
