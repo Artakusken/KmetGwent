@@ -1,6 +1,8 @@
 import os
 import sys
 import pygame
+
+from CONSTANTS import *
 from Cards_Descriptions import descriptions
 pygame.init()
 
@@ -29,25 +31,25 @@ class Card:
     def load_image(self, name, size):
         directory = os.path.join(name)
         if os.path.isfile(directory):
-            if size == 'L':
-                image = pygame.transform.scale(pygame.image.load(directory), (320, 458))
+            if size == 'M':
+                image = pygame.transform.scale(pygame.image.load(directory), (MCARD_W, MCARD_H))
             elif size == 'S':
-                image = pygame.transform.scale(pygame.image.load(directory), (105, 140))
+                image = pygame.transform.scale(pygame.image.load(directory), (SCARD_W, SCARD_H))
             else:
-                image = pygame.transform.scale(pygame.image.load(directory), (150, 150))
+                image = pygame.image.load(directory)
             return image
 
     def display_cards_points(self, x, y, size, ptype, screen):
-        if size == "L":
+        if size == "M":
             font_size = 40
-            dx = 270
+            dx = 267
             text_coord_delta = 15
+            y += 2
         else:
             font_size = 24
-            dx = 84
-            text_coord_delta = 0
-            x += 4
-            y += 5
+            dx = 77
+            text_coord_delta = 10
+            y += 2
 
         font = pygame.font.Font(None, font_size)
         if self.power == self.bp:
@@ -58,27 +60,33 @@ class Card:
             font_color = (200, 50, 50)
         if ptype == "p":
             points = font.render(str(self.power), True, font_color)
-            screen.blit(points, (x + text_coord_delta, y + text_coord_delta))
+            if self.power > 9:
+                screen.blit(points, (x + text_coord_delta, y + text_coord_delta))
+            else:
+                screen.blit(points, (x + text_coord_delta + 6, y + text_coord_delta))
         else:
-            points = font.render(str(self.armor), True, (0, 0, 0))
-            screen.blit(points, (x + dx + text_coord_delta, y + text_coord_delta))
+            armor = font.render(str(self.armor), True, (0, 0, 0))
+            if self.power > 9:
+                screen.blit(armor, (x + dx + text_coord_delta, y + text_coord_delta))
+            else:
+                screen.blit(armor, (x + dx + text_coord_delta, y + text_coord_delta))
 
     def render(self, x, y, size, screen):
-        if size == 'L':
-            self.image = self.load_image('CardsPictures\\' + 'L' + self.image_path, 'L')
-            screen.blit(self.image, (x, y, 320, 458))
-            screen.blit(pygame.image.load(os.path.join('CardsPictures\\LLCorner.png')), (x + 10, y + 10))
-            self.display_cards_points(x, y, "L", "p", screen)
+        if size == 'M':
+            self.image = self.load_image('CardsPictures\\' + 'L' + self.image_path, 'M')
+            screen.blit(self.image, (x, y, MCARD_W, MCARD_H))
+            screen.blit(pygame.image.load(os.path.join('CardsPictures\\LLCorner.png')), (x, y))
+            self.display_cards_points(x, y, "M", "p", screen)
             if self.armor > 0:
-                screen.blit(pygame.image.load(os.path.join('CardsPictures\\LRCorner.png')), (x + 275, y + 10))
-                self.display_cards_points(x, y, "L", "a", screen)
+                screen.blit(pygame.image.load(os.path.join('CardsPictures\\LRCorner.png')), (x + 263, y + 2))
+                self.display_cards_points(x, y, "M", "a", screen)
         else:
             self.image = self.load_image('CardsPictures\\' + 'S' + self.image_path, 'S')
-            screen.blit(self.image, (x, y, 105, 140))
-            screen.blit(pygame.image.load(os.path.join('CardsPictures\\SLCorner.png')), (x + 3, y + 3))
+            screen.blit(self.image, (x, y, SCARD_W, SCARD_H))
+            screen.blit(pygame.image.load(os.path.join('CardsPictures\\LRight_Corner.png')), (x, y))
             self.display_cards_points(x, y, "S", "p", screen)
             if self.armor > 0:
-                screen.blit(pygame.image.load(os.path.join('CardsPictures\\SRCorner.png')), (x + 84, y + 3))
+                screen.blit(pygame.image.load(os.path.join('CardsPictures\\SRCorner.png')), (x + 77, y + 3))
                 self.display_cards_points(x, y, "S", "a", screen)
 
 
@@ -90,7 +98,7 @@ class Leader(pygame.sprite.Sprite):
         self.fraction = fraction
         self.cur_frame = 0
         self.frames_number = frame_n
-        self.rect = pygame.Rect(x, y, 212, 309)
+        self.rect = pygame.Rect(x, y, LEADER_W, LEADER_H)
         self.load_image(animation)
 
     def load_image(self, name):
@@ -98,7 +106,7 @@ class Leader(pygame.sprite.Sprite):
         for i in os.listdir(directory):
             if os.path.isfile(directory + i):
                 image = pygame.image.load(directory + i)
-                self.frames.append(pygame.transform.scale(image, (212, 309)))
+                self.frames.append(pygame.transform.scale(image, (LEADER_W, LEADER_H)))
             else:
                 print(f"Файл с изображением '{i}' не найден")
 
@@ -119,7 +127,7 @@ class Leader(pygame.sprite.Sprite):
 #             Warrior.power -= 1
 #
 #     screen.fill((150, 150, 150))
-#     Warrior.render(20, 20, "S", screen)
+#     Warrior.render(20, 20, "M", screen)
 #     pygame.display.flip()
 #
 # pygame.quit()

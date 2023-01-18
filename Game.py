@@ -3,45 +3,22 @@ import os
 import sys
 
 from Cards import Card, Leader
-
+from CONSTANTS import *
 pygame.init()
 
 
 def load_image(name, size='M'):
     directory = os.path.join(name)
     if os.path.isfile(directory):
-        if size == 'M':
+        if size == 'L':
             image = pygame.image.load(directory)
-        elif size == 'L':
-            image = pygame.transform.scale(pygame.image.load(directory), (320, 458))
+        elif size == 'M':
+            image = pygame.transform.scale(pygame.image.load(directory), (MCARD_W, MCARD_H))
         elif size == 'K':
             image = pygame.transform.scale(pygame.image.load(directory), (150, 150))
         else:
-            image = pygame.transform.scale(pygame.image.load(directory), (105, 140))
+            image = pygame.transform.scale(pygame.image.load(directory), (SCARD_W, SCARD_H))
         return image
-
-
-class AnimatedSprite(pygame.sprite.Sprite):
-    def __init__(self, name, group, x, y, frame_n=-1):
-        super().__init__(group)
-        self.frames = []
-        self.cur_frame = 0
-        self.frames_number = frame_n
-        self.rect = pygame.Rect(x, y, 212, 309)
-        self.load_image(name)
-
-    def load_image(self, name):
-        directory = os.path.join('Animations', name + '\\')
-        for i in os.listdir(directory):
-            if os.path.isfile(directory + i):
-                image = pygame.image.load(directory + i)
-                self.frames.append(pygame.transform.scale(image, (212, 309)))
-            else:
-                print(f"Файл с изображением '{i}' не найден")
-
-    def update(self):
-        self.cur_frame = (self.cur_frame + 1) % self.frames_number
-        self.image = self.frames[self.cur_frame]
 
 
 all_sprites = pygame.sprite.Group()
@@ -49,18 +26,20 @@ enemy_leader = pygame.sprite.Group()
 ally_leader = pygame.sprite.Group()
 ERoche = Leader("Roche180png", "Vernon Roche", "NR", enemy_leader, 181, 75, 70)
 Roche = Leader("Roche180png", "Vernon Roche", "NR", ally_leader, 181, 75, 685)
-size = 1920, 1080
+
+size = SWIDTH, SHEIGHT
 screen = pygame.display.set_mode(size)
 running = True
 clock = pygame.time.Clock()
 c = 0
-test = load_image('CardsPictures\LClan Tuirseach Veteran.png', 'L')
+test = load_image('CardsPictures\LClan Tuirseach Veteran.png', 'M')
 s_test = load_image('CardsPictures\SClan Tuirseach Veteran.png', 'S')
 koloda = load_image('Field\\North.png', 'S')
 sbros = load_image('Field\Dump.png', 'S')
 moneta = load_image('Field\RCoin.png', 'K')
 test_rect = test.get_rect()
 test_srect = s_test.get_rect()
+field = load_image('Field\\Field.jpg', "L")
 Warrior = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
 
 
@@ -81,7 +60,7 @@ while running:
                 running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             surface = pygame.transform.smoothscale(screen, (500, 400))
-            blur = pygame.transform.smoothscale(surface, (1920, 1080))
+            blur = pygame.transform.smoothscale(surface, (SWIDTH, SHEIGHT))
             screen.blit(blur, (0, 0))
             draw_text(screen, str('lorem ipsum'), 30, 1655, 688 + 10)
             for j in range(4):
@@ -98,13 +77,13 @@ while running:
                         Warrior.render(545 + a, 485 + b, "S", screen)
             c += 1
     if c % 2 == 0:
-        screen.blit(load_image('Field\\Field.jpg'), (0, 0, 1920, 1080))
+        screen.blit(field, (0, 0, SWIDTH, SHEIGHT))
         enemy_leader.update()
         ally_leader.update()
         enemy_leader.draw(screen)
         ally_leader.draw(screen)
         screen.blit(test, (1575, 230, 320, 458))
-        Warrior.render(1575, 230, "L", screen)
+        Warrior.render(1575, 230, "M", screen)
         screen.blit(koloda, (1630, 0, 105, 150))
         screen.blit(koloda, (1630, 935, 105, 150))
         screen.blit(sbros, (1765, 0, 105, 150))
@@ -117,7 +96,7 @@ while running:
         surf2.fill((150, 250, 150))
         screen.blit(surf2, (5, 520, 75, 75))
     pygame.display.flip()
-    clock.tick(30)
+    clock.tick(FPS)
 
 pygame.quit()
 
