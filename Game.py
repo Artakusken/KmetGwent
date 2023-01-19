@@ -1,8 +1,9 @@
 import pygame
 import os
-import sys
+# import sys
 
 from Cards import Card, Leader
+from Field import Field
 from CONSTANTS import *
 pygame.init()
 
@@ -21,26 +22,18 @@ def load_image(name, size='M'):
         return image
 
 
-all_sprites = pygame.sprite.Group()
-enemy_leader = pygame.sprite.Group()
-ally_leader = pygame.sprite.Group()
-ERoche = Leader("Roche180png", "Vernon Roche", "NR", enemy_leader, 181, 75, 70)
-Roche = Leader("Roche180png", "Vernon Roche", "NR", ally_leader, 181, 75, 685)
+ERoche = Leader("Roche180png", "Vernon Roche", "NR", 181, 75, 70)
+Roche = Leader("Roche180png", "Vernon Roche", "NR", 181, 75, 685)
 
 size = SWIDTH, SHEIGHT
 screen = pygame.display.set_mode(size)
 running = True
 clock = pygame.time.Clock()
 c = 0
-test = load_image('CardsPictures\LClan Tuirseach Veteran.png', 'M')
 s_test = load_image('CardsPictures\SClan Tuirseach Veteran.png', 'S')
-koloda = load_image('Field\\North.png', 'S')
-sbros = load_image('Field\Dump.png', 'S')
-moneta = load_image('Field\RCoin.png', 'K')
-test_rect = test.get_rect()
-test_srect = s_test.get_rect()
-field = load_image('Field\\Field.jpg', "L")
+field = Field(ERoche, Roche)
 Warrior = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
+field.test(Warrior)
 
 
 def draw_text(surf, text, size, x, y):
@@ -58,6 +51,10 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
+            if event.key == pygame.K_q:
+                field.set_panel_card(Roche)
+            if event.key == pygame.K_w:
+                field.set_panel_card(Warrior)
         if event.type == pygame.MOUSEBUTTONDOWN:
             surface = pygame.transform.smoothscale(screen, (500, 400))
             blur = pygame.transform.smoothscale(surface, (SWIDTH, SHEIGHT))
@@ -77,24 +74,8 @@ while running:
                         Warrior.render(545 + a, 485 + b, "S", screen)
             c += 1
     if c % 2 == 0:
-        screen.blit(field, (0, 0, SWIDTH, SHEIGHT))
-        enemy_leader.update()
-        ally_leader.update()
-        enemy_leader.draw(screen)
-        ally_leader.draw(screen)
-        screen.blit(test, (1575, 230, 320, 458))
-        Warrior.render(1575, 230, "M", screen)
-        screen.blit(koloda, (1630, 0, 105, 150))
-        screen.blit(koloda, (1630, 935, 105, 150))
-        screen.blit(sbros, (1765, 0, 105, 150))
-        screen.blit(sbros, (1765, 935, 105, 150))
-        screen.blit(moneta, (155, 450, 150, 150))
-        surf1 = pygame.Surface((75, 75))
-        surf1.fill((150, 150, 150))
-        screen.blit(surf1, (5, 440, 75, 75))
-        surf2 = pygame.Surface((75, 75))
-        surf2.fill((150, 250, 150))
-        screen.blit(surf2, (5, 520, 75, 75))
+        field.render_ui_images(screen)
+        field.render_ui_leader(screen)
     pygame.display.flip()
     clock.tick(FPS)
 

@@ -91,15 +91,22 @@ class Card:
 
 
 class Leader(pygame.sprite.Sprite):
-    def __init__(self, animation, name, fraction, group, frame_n, x, y):
-        super().__init__(group)
+    def __init__(self, animation, name, fraction, frame_n, x, y):
+        super().__init__()
         self.frames = []
         self.name = name
         self.fraction = fraction
         self.cur_frame = 0
+        self.image_path = name + '.png'
         self.frames_number = frame_n
         self.rect = pygame.Rect(x, y, LEADER_W, LEADER_H)
         self.load_image(animation)
+        if name in descriptions.keys():
+            self.description = descriptions[name]
+        else:
+            self.description = ""
+        self.rability = 3
+        self.mability = 1
 
     def load_image(self, name):
         directory = os.path.join('Animations', name + '\\')
@@ -112,7 +119,9 @@ class Leader(pygame.sprite.Sprite):
 
     def update(self):
         self.cur_frame = (self.cur_frame + 1) % self.frames_number
-        self.image = self.frames[self.cur_frame]
+
+    def draw(self, screen):
+        screen.blit(self.frames[self.cur_frame], (self.rect[0], self.rect[1]))
 
 # Warrior = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
 # screen = pygame.display.set_mode((600, 600))
