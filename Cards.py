@@ -4,6 +4,7 @@ import pygame
 
 from CONSTANTS import *
 from Cards_Descriptions import descriptions
+
 pygame.init()
 
 
@@ -32,6 +33,9 @@ class Card:
             self.description = "EMPTY DESCRIPTION"
         self.location = [0, None]  # 0 - deck, 1 - hand, 2 - field, 3 - dump. Second arg is for place in 0, 1 and 3
         self.status = "in_deck"  # test variable which tell us card condition. Ex. chosen or used and etc
+        self.hand_position = None
+        self.rect = None
+        CLICKABLE.append(self)
 
     def load_image(self, name, size):
         directory = os.path.join(name)

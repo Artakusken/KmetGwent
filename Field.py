@@ -59,7 +59,7 @@ class Field:
         elif type(self.panel) == Leader:
             card = self.panel
             self.screen.blit(self.load_image('CardsPictures\\' + 'L' + card.image_path, 'M'),
-                        (1575, 230, 320, 458))
+                             (1575, 230, 320, 458))
             self.panel_name = card.name
             self.panel_text = card.description
         self.screen.blit(self.op_deck_image, (1630, 0, 105, 150))
@@ -75,7 +75,6 @@ class Field:
         self.screen.blit(self.exit, (5, 520, 75, 75))
         self.screen.blit(self.op_crown, (280, 305, 71, 71))
         self.screen.blit(self.pl_crown, (280, 925, 71, 71))
-
 
     def render_ui_leader(self):
         self.op_leader.update()
@@ -107,13 +106,13 @@ class Field:
                 self.op_crown = self.load_image('Field\R2Crown.png', 'O')
 
     def draw_text(self, surf, text, size, x, y):
-        font = pygame.font.SysFont('arial', size, bold=True)
+        font = pygame.font.SysFont(FONT, size, bold=True)
         text_surface = font.render(text, True, (200, 200, 200))
         # text_rect = text_surface.get_rect()
         # text_rect.midtop = (x, y)
         surf.blit(text_surface, (x, y))
 
-    def render_text(self, op_leader, pl_leader):
+    def render_text(self, op_leader, pl_leader, hand, deck, dump):
         self.draw_text(self.screen, self.panel_name, 30, 1580, 690)
         self.draw_text(self.screen, ", ".join(self.panel_tags), 25, 1580, 730)
         self.draw_text(self.screen, self.panel_text, 20, 1580, 770)
@@ -135,6 +134,16 @@ class Field:
         self.draw_text(self.screen, str(pl_leader.rability), 20, 250, 945)
         self.draw_text(self.screen, str(pl_leader.mability), 20, 250, 975)
 
+        self.draw_text(self.screen, str(len(hand.cards)), 30, 1580, 1045)
+        self.draw_text(self.screen, str(len(deck.cards)), 30, 1675, 1045)
+        self.draw_text(self.screen, str(len(dump.cards)), 30, 1810, 1045)
 
-
-
+    def draw_hand(self, hand):
+        for i in range(len(hand.cards)):
+            a = i * 110
+            if hand.cards[i].status == "chosen":
+                hand.cards[i].render(475 + a, 935, "S", self.screen)
+                hand.cards[i].rect = (475 + a, 935, SWIDTH, SHEIGHT)
+            else:
+                hand.cards[i].render(475 + a, 945, "S", self.screen)
+                hand.cards[i].rect = (475 + a, 945, SWIDTH, SHEIGHT)
