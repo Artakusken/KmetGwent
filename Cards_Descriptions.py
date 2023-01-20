@@ -1,3 +1,3 @@
 descriptions = {
-                "Clan Tuirseach Veteran": "PLACEHOLDER TEXT",
+                "Clan Tuirseach Veteran": "Placeholder Text",
 }

@@ -22,8 +22,8 @@ def load_image(name, size='M'):
         return image
 
 
-ERoche = Leader("Roche180png", "Vernon Roche", "NR", 181, 75, 70)
-Roche = Leader("Roche180png", "Vernon Roche", "NR", 181, 75, 685)
+ERoche = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 70)
+Roche = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 685)
 
 size = SWIDTH, SHEIGHT
 screen = pygame.display.set_mode(size)
@@ -31,9 +31,8 @@ running = True
 clock = pygame.time.Clock()
 c = 0
 s_test = load_image('CardsPictures\SClan Tuirseach Veteran.png', 'S')
-field = Field(ERoche, Roche)
+field = Field(ERoche, Roche, screen)
 Warrior = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
-field.test(Warrior)
 
 
 def draw_text(surf, text, size, x, y):
@@ -55,11 +54,16 @@ while running:
                 field.set_panel_card(Roche)
             if event.key == pygame.K_w:
                 field.set_panel_card(Warrior)
+            if event.key == pygame.K_a:
+                field.set_crowns(True)
+            if event.key == pygame.K_s:
+                field.set_crowns(False)
+            if event.key == pygame.K_d:
+                field.round += 1
         if event.type == pygame.MOUSEBUTTONDOWN:
             surface = pygame.transform.smoothscale(screen, (500, 400))
             blur = pygame.transform.smoothscale(surface, (SWIDTH, SHEIGHT))
             screen.blit(blur, (0, 0))
-            draw_text(screen, str('lorem ipsum'), 30, 1655, 688 + 10)
             for j in range(4):
                 v = 9
                 if j == 3:
@@ -74,8 +78,9 @@ while running:
                         Warrior.render(545 + a, 485 + b, "S", screen)
             c += 1
     if c % 2 == 0:
-        field.render_ui_images(screen)
-        field.render_ui_leader(screen)
+        field.render_ui_images()
+        field.render_ui_leader()
+        field.render_text(ERoche, Roche)
     pygame.display.flip()
     clock.tick(FPS)
 

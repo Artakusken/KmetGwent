@@ -9,8 +9,13 @@ pygame.init()
 
 class Card:
     def __init__(self, name, base_power, image, armor, provision, card_type, fraction, *tags):
+        if fraction == "NR":
+            self.fraction = "Королевства Севера"
+        elif fraction == "NG":
+            self.fraction = "Нильфгаард"
+        else:
+            self.fraction = fraction
         self.name = name
-        self.fraction = fraction
         self.bp = base_power
         self.power = self.bp
         self.armor = armor
@@ -94,8 +99,13 @@ class Leader(pygame.sprite.Sprite):
     def __init__(self, animation, name, fraction, frame_n, x, y):
         super().__init__()
         self.frames = []
+        if fraction == "NR":
+            self.fraction = "Королевства Севера"
+        elif fraction == "NG":
+            self.fraction = "Нильфгаард"
+        else:
+            self.fraction = fraction
         self.name = name
-        self.fraction = fraction
         self.cur_frame = 0
         self.image_path = name + '.png'
         self.frames_number = frame_n
@@ -104,7 +114,7 @@ class Leader(pygame.sprite.Sprite):
         if name in descriptions.keys():
             self.description = descriptions[name]
         else:
-            self.description = ""
+            self.description = "EMPTY DESCRIPTION"
         self.rability = 3
         self.mability = 1
 
@@ -122,21 +132,3 @@ class Leader(pygame.sprite.Sprite):
 
     def draw(self, screen):
         screen.blit(self.frames[self.cur_frame], (self.rect[0], self.rect[1]))
-
-# Warrior = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
-# screen = pygame.display.set_mode((600, 600))
-# running = True
-# while running:
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             running = False
-#         if event.type == pygame.MOUSEBUTTONDOWN:
-#             Warrior.power += 1
-#         if event.type == pygame.KEYDOWN:
-#             Warrior.power -= 1
-#
-#     screen.fill((150, 150, 150))
-#     Warrior.render(20, 20, "M", screen)
-#     pygame.display.flip()
-#
-# pygame.quit()
