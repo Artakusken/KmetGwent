@@ -27,6 +27,7 @@ class Deck:
         self.cards = []
         CLICKABLE.append(self)
         self.rect = (1630, 935, 105, 150)
+        self.name = ""
 
     # def set_hand(self, hand):
     #     self.hand = hand

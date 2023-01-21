@@ -136,3 +136,6 @@ class Leader(pygame.sprite.Sprite):
 
     def draw(self, screen):
         screen.blit(self.frames[self.cur_frame], (self.rect[0], self.rect[1]))
+
+
+Warrior = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
