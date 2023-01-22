@@ -5,7 +5,7 @@ import os
 
 
 class Field:
-    def __init__(self, op_leader, pl_leader, screen):
+    def __init__(self, op_leader, pl_leader, screen, op_fraction):
         self.field_image = self.load_image('Field\\Field.jpg', "O")
         self.round = 1
         self.pl_mr = []  # player melee row
@@ -14,6 +14,7 @@ class Field:
         self.op_mr = []  # opponent melee row
         self.op_rr = []  # opponent range row
         self.op_sr = []  # opponent siege row
+        self.op_fraction = op_fraction
         self.turn = None  # true if it's player turn, false if it's ai turn
         self.panel = None
         self.panel_name = ""
@@ -21,8 +22,11 @@ class Field:
         self.panel_text = ""
         self.controls = ["ПКМ - отменить выбор карты", "ЛКМ - сыграть карту"]
         self.dump_image = self.load_image('Field\Dump.png', 'S')
-        self.pl_deck_image = self.load_image('Field\\North.png', 'S')
-        self.op_deck_image = self.load_image('Field\\Nilfgaard.png', 'S')
+        self.pl_deck_image = self.load_image('Field\\Nilfgaard.png', 'S')
+        if op_fraction == "NR":
+            self.op_deck_image = self.load_image('Field\\North.png', 'S')
+        else:
+            self.op_deck_image = self.load_image('Field\\Scotoeli.png', 'S')
         self.rcoin = self.load_image('Field\RCoin.png', 'K')
         self.bcoin = self.load_image('Field\BCoin.png', 'K')
         self.op_crown = self.load_image('Field\R0Crown.png', 'O')
