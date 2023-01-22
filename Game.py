@@ -1,6 +1,6 @@
+import random
 import pygame
 import os
-# import sys
 import pygame_gui
 
 from Cards import Card, Leader
@@ -26,14 +26,12 @@ def load_image(name, size='M'):
             image = pygame.transform.scale(pygame.image.load(directory), (SCARD_W, SCARD_H))
         return image
 
-Warrior = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
 
 size = SWIDTH, SHEIGHT
 screen = pygame.display.set_mode(size)
 running = True
 clock = pygame.time.Clock()
 c = 0
-s_test = load_image('CardsPictures\SClan Tuirseach Veteran.png', 'S')
 
 Start_menu = Menu(SWIDTH, SHEIGHT)
 Play_menu = Menu(SWIDTH, SHEIGHT)
@@ -54,20 +52,53 @@ def draw_text(surf, text, size, x, y):
     surf.blit(text_surface, text_rect)
 
 
-def in_area(coord):
+def in_area(coord, mouse_type, field):
+    global menu_var
     x, y = coord
     for i in CLICKABLE:
-        if i.rect:
+        if i != field.rcoin and i != field.bcoin and i.rect:
             if i.rect[0] < x < i.rect[0] + i.rect[2] and i.rect[1] < y < i.rect[1] + i.rect[3]:
-                if type(i) == Card:
-                    i.status = "chosen"
-                print(str(type(i)))
-                return str(type(i))
+                action_on_click(i, mouse_type, field)
+                if mouse_type == 3:
+                    action_on_hover(i, field)
+                return str(i.name)
+    if mouse_type == 1:
+        if 155 < x < 305 and 450 < y < 600:
+            if field.turn is False:
+                field.turn = True
+                return str("Красная монета")
+            else:
+                field.turn = False
+                return str("Синяя монета")
+        if 5 < x < 80 and 500 < y < 575:
+            menu_var = 0
     return "Nothing"
 
 
-# for i in CLICKABLE:
-#     print(type(i), i)
+def action_on_hover(obj, field):
+    if type(obj) == Card:
+        field.set_panel_card(obj)
+    if type(obj) == Leader:
+        field.set_panel_card(obj)
+
+
+def action_on_click(obj, click_type, field):
+    if type(obj) == Card:
+        if obj.status != "chosen" and click_type == 1:
+            obj.status = "chosen"
+        if obj.status == "chosen" and click_type == 2:
+            obj.status = "in hand"
+    elif type(obj) == Leader:
+        if type(field.panel) != Leader and click_type == 1:
+            print("Leader extra ability")
+        if type(field.panel) == Leader and click_type == 2:
+            print("Leader main ability")
+    elif type(obj) == Deck:
+        pass
+    elif type(obj) == Dump:
+        pass
+
+
 to_render = ""
 while running:
     if menu_var < 3:
@@ -92,19 +123,29 @@ while running:
                     ERoche = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 70)
                     Roche = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 685)
                     field = Field(ERoche, Roche, screen, "NR")
-                    pl_dump = Dump()
+                    pl_dump = Dump("Сброс игрока")
                     pl_deck = decks_list['Мужик * на 30']
                     pl_hand = Hand()
                     pl_hand.start_hand(pl_deck)
+                    op_dump = Dump("Сброс противника")
+                    op_deck = decks_list['Мужик * на 30, x2']
+                    op_hand = Hand()
+                    op_hand.start_hand(op_deck)
+                    field.turn = random.choice([True, False])
                 if event.ui_element.text == "Битва с длинноухими":
                     ERoche = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 70)
                     Roche = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 685)
                     menu_var = 3
                     field = Field(ERoche, Roche, screen, "Scoia")
-                    pl_dump = Dump()
+                    pl_dump = Dump("Сброс игрока")
                     pl_deck = decks_list['Мужик * на 30']
                     pl_hand = Hand()
                     pl_hand.start_hand(pl_deck)
+                    op_dump = Dump("Сброс противника")
+                    op_deck = decks_list['Мужик * на 30, x2']
+                    op_hand = Hand()
+                    op_hand.start_hand(pl_deck)
+                    field.turn = random.choice([True, False])
             if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.text in constructor.cards.keys():
                 constructor.chosen_card = event.text
             if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.text in constructor.decks.keys():
@@ -126,7 +167,7 @@ while running:
         if c % 2 == 0:
             field.render_ui_images()
             field.render_ui_leader()
-            field.render_text(ERoche, Roche, pl_hand, pl_deck, pl_dump)
+            field.render_text(ERoche, Roche, pl_hand, pl_deck, pl_dump, op_hand, op_deck, op_dump)
             field.draw_hand(pl_hand)
             font = pygame.font.SysFont(FONT, 30, bold=True)
             text_surface = font.render(to_render, True, (200, 200, 200))
@@ -137,10 +178,6 @@ while running:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     menu_var = 0
-                if event.key == pygame.K_q:
-                    field.set_panel_card(Roche)
-                if event.key == pygame.K_w:
-                    field.set_panel_card(Warrior)
                 if event.key == pygame.K_a:
                     field.set_crowns(True)
                 if event.key == pygame.K_s:
@@ -153,33 +190,23 @@ while running:
                     surface = pygame.transform.smoothscale(screen, (500, 400))
                     blur = pygame.transform.smoothscale(surface, (SWIDTH, SHEIGHT))
                     screen.blit(blur, (0, 0))
-                    for j in range(3):
-                        v = 9
-                        if j == 3:
-                            v = 10
-                        for i in range(v):
-                            a = i * 115
-                            b = j * 155
-                            Warrior.render(545 + a, 485 + b, "S", screen)
                     c += 1
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    # font = pygame.font.SysFont(FONT, 30, bold=True)
-                    a = in_area(event.pos)
+                    a = in_area(event.pos, 1, field)
                     to_render = f"{event.pos}, {a}"
-                    # text_surface = font.render(f"{event.pos}, {a}", True, (200, 200, 200))
-                    # screen.blit(text_surface, (250, 900))
                 elif event.button == 3:
-                    # font = pygame.font.SysFont(FONT, 30, bold=True)
+                    a = in_area(event.pos, 2, field)
                     to_render = f"{event.pos}, 2"
-                    # text_surface = font.render(f"{event.pos}, 2", True, (200, 200, 200))
-                    # screen.blit(text_surface, (250, 900))
-
-            # if event.type == pygame.MOUSEMOTION:
-            #     font = pygame.font.SysFont(FONT, 30, bold=True)
-            #     text_surface = font.render(f"{event.pos}, 0", True, (200, 200, 200))
-            #     screen.blit(text_surface, (250, 900))
+            if event.type == pygame.MOUSEMOTION:
+                font = pygame.font.SysFont(FONT, 30, bold=True)
+                a = in_area(event.pos, 3, field)
+                to_render = f"{event.pos}"
         pygame.display.flip()
         clock.tick(FPS)
 
 pygame.quit()
+
+# for i in CLICKABLE:
+#     if type(i) != Card:
+#         print(type(i), i.name, i.rect)

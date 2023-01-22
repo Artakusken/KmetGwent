@@ -1,5 +1,4 @@
 import os
-import sys
 import pygame
 
 from CONSTANTS import *
@@ -22,7 +21,12 @@ class Card:
         self.armor = armor
         self.provision = provision
         self.image_path = image
-        self.tags = tags
+        if type(tags) is tuple:
+            self.tags = ' '.join(tags)
+        elif type(tags) is str:
+            self.tags = tags
+        else:
+            self.tags = None
         self.card_type = card_type
         self.row = None
         self.column = None
@@ -36,6 +40,10 @@ class Card:
         self.hand_position = None
         self.rect = None
         CLICKABLE.append(self)
+
+    def set_tags(self, tagi):
+        if self.tags is None:
+            self.tags = tagi
 
     def load_image(self, name, size):
         directory = os.path.join(name)
@@ -121,6 +129,7 @@ class Leader(pygame.sprite.Sprite):
             self.description = "EMPTY DESCRIPTION"
         self.rability = 3
         self.mability = 1
+        CLICKABLE.append(self)
 
     def load_image(self, name):
         directory = os.path.join('Animations', name + '\\')
@@ -136,6 +145,3 @@ class Leader(pygame.sprite.Sprite):
 
     def draw(self, screen):
         screen.blit(self.frames[self.cur_frame], (self.rect[0], self.rect[1]))
-
-
-Warrior = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")

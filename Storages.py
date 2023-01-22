@@ -34,9 +34,13 @@ class Hand:
 class Deck:
     def __init__(self, name, cards):
         self.cards = self.set_cards(cards)
-        CLICKABLE.append(self)
-        self.rect = (1630, 935, 105, 150)
         self.name = name
+        if len(self.cards) > 1:
+            CLICKABLE.append(self)
+            if self.name == "Мужик * на 30":
+                self.rect = (1630, 935, 105, 150)
+            else:
+                self.rect = (1630, 15, 105, 150)
 
     def set_cards(self, cards):
         random.shuffle(cards)
@@ -64,9 +68,13 @@ class Deck:
 
 
 class Dump:
-    def __init__(self):
+    def __init__(self, name):
         self.cards = []
-        self.rect = (1765, 935, 105, 150)
+        self.name = name
+        if self.name == "Сброс игрока":
+            self.rect = (1765, 935, 105, 150)
+        else:
+            self.rect = (1765, 15, 105, 150)
         CLICKABLE.append(self)
 
     def get_card(self, name):

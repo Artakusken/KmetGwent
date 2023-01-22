@@ -4,16 +4,40 @@ import pygame
 import os
 
 
+class Row:
+    def __init__(self, row_type, player):
+        self.row = row_type
+        self.places = ROW_SIZE
+        self.player = player
+        if player == "Human":
+            if self.row == "melee":
+                self.rect = (540, 480, 1030, 140)
+            elif self.row == "ranged":
+                self.rect = (540, 640, 1030, 140)
+            else:
+                self.rect = (540, 800, 1030, 140)
+        else:
+            if self.row == "melee":
+                self.rect = (540, 320, 1030, 140)
+            elif self.row == "ranged":
+                self.rect = (540, 160, 1030, 140)
+            else:
+                self.rect = (540, 5, 1030, 140)
+        self.cards = []
+        CLICKABLE.append(self)
+        self.name = self.row + self.player
+
+
 class Field:
     def __init__(self, op_leader, pl_leader, screen, op_fraction):
         self.field_image = self.load_image('Field\\Field.jpg', "O")
         self.round = 1
-        self.pl_mr = []  # player melee row
-        self.pl_rr = []  # player range row
-        self.pl_sr = []  # player siege row
-        self.op_mr = []  # opponent melee row
-        self.op_rr = []  # opponent range row
-        self.op_sr = []  # opponent siege row
+        self.pl_mr = Row("melee", "Human")  # player melee row
+        self.pl_rr = Row("ranged", "Human")  # player range row
+        self.pl_sr = Row("siege", "Human")  # player siege row
+        self.op_mr = Row("melee", "AI")  # opponent melee row
+        self.op_rr = Row("ranged", "AI")  # opponent range row
+        self.op_sr = Row("siege", "AI")  # opponent siege row
         self.op_fraction = op_fraction
         self.turn = None  # true if it's player turn, false if it's ai turn
         self.panel = None
@@ -33,10 +57,7 @@ class Field:
         self.pl_crown = self.load_image('Field\B0Crown.png', 'O')
         self.pl_leader = pl_leader
         self.op_leader = op_leader
-        self.history = pygame.Surface((75, 75))
-        self.history.fill((150, 150, 150))
-        self.exit = pygame.Surface((75, 75))
-        self.exit.fill((150, 250, 150))
+        self.exit = self.load_image('Field\exit.png', 'O')
         self.screen = screen
 
     def load_image(self, name, size='M'):
@@ -74,9 +95,7 @@ class Field:
             self.screen.blit(self.bcoin, (155, 450, 150, 150))
         else:
             self.screen.blit(self.rcoin, (155, 450, 150, 150))
-        self.screen.blit(self.history, (5, 440, 75, 75))
-        self.screen.blit(self.exit, (5, 520, 75, 75))
-        self.screen.blit(self.exit, (5, 520, 75, 75))
+        self.screen.blit(self.exit, (5, 500, 75, 75))
         self.screen.blit(self.op_crown, (280, 305, 71, 71))
         self.screen.blit(self.pl_crown, (280, 925, 71, 71))
 
@@ -92,9 +111,13 @@ class Field:
             self.panel_name = card.name
             self.panel_tags = card.tags
             self.panel_text = card.description
-        else:
+        elif type(card) == Leader:
             self.panel_name = card.name
             self.panel_text = card.description
+            self.panel_tags = ""
+        else:
+            self.panel_name = ""
+            self.panel_text = ""
             self.panel_tags = ""
 
     def set_crowns(self, win):
@@ -116,9 +139,9 @@ class Field:
         # text_rect.midtop = (x, y)
         surf.blit(text_surface, (x, y))
 
-    def render_text(self, op_leader, pl_leader, hand, deck, dump):
+    def render_text(self, op_leader, pl_leader, pl_hand, pl_deck, pl_dump, op_hand, op_deck, op_dump):
         self.draw_text(self.screen, self.panel_name, 30, 1580, 690)
-        self.draw_text(self.screen, ", ".join(self.panel_tags), 25, 1580, 730)
+        self.draw_text(self.screen, self.panel_tags, 25, 1580, 730)
         self.draw_text(self.screen, self.panel_text, 20, 1580, 770)
 
         self.draw_text(self.screen, op_leader.fraction, 20, 20, 20)
@@ -138,16 +161,25 @@ class Field:
         self.draw_text(self.screen, str(pl_leader.rability), 20, 250, 945)
         self.draw_text(self.screen, str(pl_leader.mability), 20, 250, 975)
 
-        self.draw_text(self.screen, str(len(hand.cards)), 30, 1580, 1045)
-        self.draw_text(self.screen, str(len(deck.cards)), 30, 1675, 1045)
-        self.draw_text(self.screen, str(len(dump.cards)), 30, 1810, 1045)
+        self.draw_text(self.screen, str(len(pl_hand.cards)), 30, 1580, 1045)
+        self.draw_text(self.screen, str(len(pl_deck.cards)), 30, 1675, 1045)
+        self.draw_text(self.screen, str(len(pl_dump.cards)), 30, 1810, 1045)
+
+        self.draw_text(self.screen, str(len(op_hand.cards)), 30, 1580, 15)
+        self.draw_text(self.screen, str(len(op_deck.cards)), 30, 1675, 15)
+        self.draw_text(self.screen, str(len(op_dump.cards)), 30, 1810, 15)
+
+        if self.turn:
+            self.draw_text(self.screen, "Ваш ход", 20, 250, 845)
+        else:
+            self.draw_text(self.screen, "Ход противника", 20, 250, 845)
 
     def draw_hand(self, hand):
         for i in range(len(hand.cards)):
             a = i * 110
             if hand.cards[i].status == "chosen":
                 hand.cards[i].render(475 + a, 935, "S", self.screen)
-                hand.cards[i].rect = (475 + a, 935, SWIDTH, SHEIGHT)
+                hand.cards[i].rect = (475 + a, 935, SCARD_W, SCARD_H)
             else:
                 hand.cards[i].render(475 + a, 945, "S", self.screen)
-                hand.cards[i].rect = (475 + a, 945, SWIDTH, SHEIGHT)
+                hand.cards[i].rect = (475 + a, 945, SCARD_W, SCARD_H)

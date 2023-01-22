@@ -1,7 +1,6 @@
 import pygame
 import pygame_gui
 import os
-# import sqlite3
 from CONSTANTS import *
 from Data import decks_list, cards_list
 from Storages import Deck
@@ -92,11 +91,10 @@ class Constructor(Menu):
     def display_card(self):
         if self.chosen_card in descriptions.keys():
             text = descriptions[self.chosen_card]
-            print(text, "L" + self.chosen_card + ".png")
             image = load_image("CardsPictures\\L" + self.chosen_card + ".png", "C")
             self.screen.blit(image, (1050, 140, 496, 707))
             self.draw_text(self.screen, f"{self.chosen_card}", 30, 1560, 150)
-            self.draw_text(self.screen, ", ".join(self.cards[self.chosen_card].tags), 25, 1560, 200)
+            self.draw_text(self.screen, self.cards[self.chosen_card].tags, 25, 1560, 200)
             self.draw_text(self.screen, f"{text}", 20, 1560, 250)
 
     def rename_deck(self, new_name):
