@@ -115,7 +115,7 @@ class Constructor(Menu):
         pass
 
 
-def init_menu(back, start, play, cons):
+def init_menu(back, start, play, cons, end):
     back.blit(load_image('Field\\NG_loadscreen.png', "HD"), (0, 0, SWIDTH, SHEIGHT))
 
     start.set_button(300, 750, 200, 75, "Играть")
@@ -134,3 +134,5 @@ def init_menu(back, start, play, cons):
 
     cons.set_button(1700, 20, 200, 75, "Выйти в меню")
     cons.set_button(1050, 20, 200, 75, "Создать новую колоду")
+
+    end.set_button(700, 450, 200, 100, "Выйти в меню")

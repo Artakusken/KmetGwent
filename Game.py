@@ -36,12 +36,13 @@ c = 0
 Start_menu = Menu(SWIDTH, SHEIGHT)
 Play_menu = Menu(SWIDTH, SHEIGHT)
 constructor = Constructor(SWIDTH, SHEIGHT, screen)
+end_menu = Menu(SWIDTH, SHEIGHT)
 background = pygame.Surface((SWIDTH, SHEIGHT))
 
-menu_dict = {0: Start_menu, 1: Play_menu, 2: constructor, 3: "Game"}
+menu_dict = {0: Start_menu, 1: Play_menu, 2: constructor, 3: "Game", 4: end_menu}
 menu_var = 0
 
-init_menu(background, Start_menu, Play_menu, constructor)
+init_menu(background, Start_menu, Play_menu, constructor, end_menu)
 
 
 def draw_text(surf, text, size, x, y):
@@ -71,7 +72,7 @@ def in_area(coord, mouse_type, field):
                 field.turn = False
                 return str("Синяя монета")
         if 5 < x < 80 and 500 < y < 575:
-            menu_var = 0
+            menu_var = 4
     return "Nothing"
 
 
@@ -163,7 +164,7 @@ while running:
             constructor.display_info()
             constructor.display_card()
         pygame.display.update()
-    else:
+    elif menu_var == 3:
         if c % 2 == 0:
             field.render_ui_images()
             field.render_ui_leader()
@@ -204,7 +205,19 @@ while running:
                 to_render = f"{event.pos}"
         pygame.display.flip()
         clock.tick(FPS)
-
+    else:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame_gui.UI_BUTTON_PRESSED:
+                if event.ui_element.text == "Выйти в меню":
+                    menu_var = 0
+            menu_dict[menu_var].manager.process_events(event)
+            menu_dict[menu_var].manager.update(30 / 1000)
+        screen.blit(background, (0, 0))
+        field.draw_end()
+        menu_dict[menu_var].manager.draw_ui(screen)
+        pygame.display.update()
 pygame.quit()
 
 # for i in CLICKABLE:

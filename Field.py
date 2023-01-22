@@ -30,6 +30,7 @@ class Row:
 
 class Field:
     def __init__(self, op_leader, pl_leader, screen, op_fraction):
+        self.player_score, self.opponent_score = 0, 0
         self.field_image = self.load_image('Field\\Field.jpg', "O")
         self.round = 1
         self.pl_mr = Row("melee", "Human")  # player melee row
@@ -183,3 +184,28 @@ class Field:
             else:
                 hand.cards[i].render(475 + a, 945, "S", self.screen)
                 hand.cards[i].rect = (475 + a, 945, SCARD_W, SCARD_H)
+
+    def draw_end(self):
+        if self.player_score > self.opponent_score:
+            self.draw_text(self.screen, "Вы выиграли", 30, 750, 400)
+            if self.round == 2:
+                self.screen.blit(self.load_image('Field\R0Crown.png', 'O'), (670, 370, 71, 71))
+            else:
+                self.screen.blit(self.load_image('Field\R10Crown.png', 'O'), (670, 370, 71, 71))
+            self.screen.blit(self.load_image('Field\B2Crown.png', 'O'), (670, 370, 71, 71))
+        elif self.player_score > self.opponent_score:
+            self.draw_text(self.screen, "Вы проиграли", 30, 750, 400)
+            if self.round == 2:
+                self.screen.blit(self.load_image('Field\B0Crown.png', 'O'), (670, 370, 71, 71))
+            else:
+                self.screen.blit(self.load_image('Field\B1Crown.png', 'O'), (670, 370, 71, 71))
+            self.screen.blit(self.load_image('Field\R2Crown.png', 'O'), (860, 370, 71, 71))
+        else:
+            self.draw_text(self.screen, "Ничья", 30, 750, 400)
+            self.screen.blit(self.load_image('Field\R2Crown.png', 'O'), (860, 370, 71, 71))
+            self.screen.blit(self.load_image('Field\B2Crown.png', 'O'), (670, 370, 71, 71))
+
+        self.draw_text(self.screen, "Вы", 30, 650, 500)
+        self.draw_text(self.screen, "Противник", 30, 910, 500)
+        self.draw_text(self.screen, str(self.player_score), 30, 650, 550)
+        self.draw_text(self.screen, str(self.opponent_score), 30, 910, 550)
