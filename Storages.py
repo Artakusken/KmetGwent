@@ -3,7 +3,7 @@ import random
 import sqlite3
 
 
-def chk_conn(con):  # проверка на соединение для этого класса
+def chk_conn(con):
     try:
         con.cursor()
         return True
@@ -21,14 +21,17 @@ class Hand:
             self.cards.append(card)
 
     def play_card(self, chosen_card, dump):
-        index = chosen_card
-        dump.cards.append(self.cards.pop(index))
+        pass
 
     def start_hand(self, deck):
         for i in range(10):
             card = deck.cards.pop()
-            card.status = "in hand"
+            card.location = 1
             self.cards.append(card)
+
+    def pop_card(self, index):
+        if len(self.cards) > 0:
+            self.cards.pop(index)
 
 
 class Deck:

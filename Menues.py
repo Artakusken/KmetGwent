@@ -1,28 +1,10 @@
 import pygame
 import pygame_gui
-import os
+# import os
 from CONSTANTS import *
-from Data import decks_list, cards_list
+from Data import DECKS_LIST, CARDS_LIST
 from Storages import Deck
 from Cards_Descriptions import descriptions
-
-
-def load_image(name, size='M'):
-    directory = os.path.join(name)
-    if os.path.isfile(directory):
-        if size == 'L':
-            image = pygame.image.load(directory)
-        elif size == 'M':
-            image = pygame.transform.scale(pygame.image.load(directory), (MCARD_W, MCARD_H))
-        elif size == 'K':
-            image = pygame.transform.scale(pygame.image.load(directory), (150, 150))
-        elif size == 'HD':
-            image = pygame.transform.scale(pygame.image.load(directory), (SWIDTH, SHEIGHT))
-        elif size == 'C':
-            image = pygame.transform.scale(pygame.image.load(directory), (496, 707))
-        else:
-            image = pygame.transform.scale(pygame.image.load(directory), (SCARD_W, SCARD_H))
-        return image
 
 
 class Menu:
@@ -31,8 +13,7 @@ class Menu:
         self.manager = pygame_gui.UIManager((x, y), 'theme.json')
 
     def set_button(self, x, y, width, height, text):
-        self.buttons.append(pygame_gui.elements.UIButton(relative_rect=pygame.Rect((x, y), (width, height)),
-                                                         text=text,
+        self.buttons.append(pygame_gui.elements.UIButton(relative_rect=pygame.Rect((x, y), (width, height)), text=text,
                                                          manager=self.manager))
 
 
@@ -44,15 +25,15 @@ class Constructor(Menu):
         self.entry_index = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((1610, 1030), (300, 50)),
                                                                manager=self.manager,
                                                                initial_text="Введите индекс карты для удаления")
-        self.decks = decks_list
-        self.cards = cards_list
+        self.decks = DECKS_LIST
+        self.cards = CARDS_LIST
         self.chosen_card = None
-        self.decks_drop_box = pygame_gui.elements.UIDropDownMenu(self.decks.keys(),
+        self.decks_drop_box = pygame_gui.elements.UIDropDownMenu(self.decks.keys(), manager=self.manager,
                                                                  relative_rect=pygame.Rect((520, 20), (250, 75)),
-                                                                 manager=self.manager, starting_option=list(self.decks.keys())[0])
-        self.cards_drop_box = pygame_gui.elements.UIDropDownMenu(self.cards.keys(),
+                                                                 starting_option=list(self.decks.keys())[0])
+        self.cards_drop_box = pygame_gui.elements.UIDropDownMenu(self.cards.keys(), manager=self.manager,
                                                                  relative_rect=pygame.Rect((780, 20), (250, 75)),
-                                                                 manager=self.manager, starting_option=list(self.cards.keys())[0])
+                                                                 starting_option=list(self.cards.keys())[0])
         self.max_provision = 150
         self.provision = 0
 
@@ -79,7 +60,7 @@ class Constructor(Menu):
     def display_info(self):
         if self.current_deck:
             if len(self.current_deck.cards) > 1:
-                self.provision = sum([cards_list[i.name].provision for i in self.current_deck.cards])
+                self.provision = sum([CARDS_LIST[i.name].provision for i in self.current_deck.cards])
             else:
                 self.provision = 0
         if self.provision <= self.max_provision:
@@ -91,7 +72,8 @@ class Constructor(Menu):
     def display_card(self):
         if self.chosen_card in descriptions.keys():
             text = descriptions[self.chosen_card]
-            image = load_image("CardsPictures\\L" + self.chosen_card + ".png", "C")
+            image_name = "CardsPictures\\L" + self.chosen_card + ".png"
+            image = pygame.transform.scale(pygame.image.load(os.path.join(image_name)), (496, 707))
             self.screen.blit(image, (1050, 140, 496, 707))
             self.draw_text(self.screen, f"{self.chosen_card}", 30, 1560, 150)
             self.draw_text(self.screen, self.cards[self.chosen_card].tags, 25, 1560, 200)
@@ -99,14 +81,14 @@ class Constructor(Menu):
 
     def rename_deck(self, new_name):
         if type(self.current_deck) == Deck:
-            decks_list[new_name] = decks_list.pop(self.current_deck.name)
+            DECKS_LIST[new_name] = DECKS_LIST.pop(self.current_deck.name)
             self.current_deck.update_name(new_name)
 
     def update_decks_box(self):
         self.decks_drop_box.kill()
-        self.decks_drop_box = pygame_gui.elements.UIDropDownMenu(self.decks.keys(),
+        self.decks_drop_box = pygame_gui.elements.UIDropDownMenu(self.decks.keys(), manager=self.manager,
                                                                  relative_rect=pygame.Rect((520, 20), (250, 75)),
-                                                                 manager=self.manager, starting_option=list(self.decks.keys())[0])
+                                                                 starting_option=list(self.decks.keys())[0])
 
     def new_deck(self):
         pass
@@ -116,7 +98,8 @@ class Constructor(Menu):
 
 
 def init_menu(back, start, play, cons, end):
-    back.blit(load_image('Field\\NG_loadscreen.png', "HD"), (0, 0, SWIDTH, SHEIGHT))
+    image = pygame.transform.scale(pygame.image.load(os.path.join('Field\\NG_loadscreen.png')), (1920, 1080))
+    back.blit(image, (0, 0, SWIDTH, SHEIGHT))
 
     start.set_button(300, 750, 200, 75, "Играть")
     start.set_button(300, 850, 200, 75, "Конструктор колоды")

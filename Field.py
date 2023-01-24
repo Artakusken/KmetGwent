@@ -26,6 +26,26 @@ class Row:
         self.cards = []
         CLICKABLE.append(self)
         self.name = self.row + self.player
+        if self.player == "Human":
+            self.frame = self.load_image("Field\\rowe5.png", "O")
+        else:
+            self.frame = self.load_image("Field\\enemy_rowe.png", "O")
+
+    def load_image(self, name, size='M'):
+        directory = os.path.join(name)
+        if os.path.isfile(directory):
+            if size == 'O':
+                image = pygame.image.load(directory)
+            elif size == 'M':
+                image = pygame.transform.scale(pygame.image.load(directory), (MCARD_W, MCARD_H))
+            elif size == 'K':
+                image = pygame.transform.scale(pygame.image.load(directory), (150, 150))
+            else:
+                image = pygame.transform.scale(pygame.image.load(directory), (SCARD_W, SCARD_H))
+            return image
+
+    def lit(self, screen):
+        screen.blit(self.frame, (self.rect[0] - 10, self.rect[1] - 40, self.rect[2], self.rect[3]))
 
 
 class Field:
@@ -46,19 +66,19 @@ class Field:
         self.panel_tags = ""
         self.panel_text = ""
         self.controls = ["ПКМ - отменить выбор карты", "ЛКМ - сыграть карту"]
-        self.dump_image = self.load_image('Field\Dump.png', 'S')
+        self.dump_image = self.load_image('Field\\Dump.png', 'S')
         self.pl_deck_image = self.load_image('Field\\Nilfgaard.png', 'S')
         if op_fraction == "NR":
             self.op_deck_image = self.load_image('Field\\North.png', 'S')
         else:
             self.op_deck_image = self.load_image('Field\\Scotoeli.png', 'S')
-        self.rcoin = self.load_image('Field\RCoin.png', 'K')
-        self.bcoin = self.load_image('Field\BCoin.png', 'K')
-        self.op_crown = self.load_image('Field\R0Crown.png', 'O')
-        self.pl_crown = self.load_image('Field\B0Crown.png', 'O')
+        self.rcoin = self.load_image('Field\\RCoin.png', 'K')
+        self.bcoin = self.load_image('Field\\BCoin.png', 'K')
+        self.op_crown = self.load_image('Field\\R0Crown.png', 'O')
+        self.pl_crown = self.load_image('Field\\B0Crown.png', 'O')
         self.pl_leader = pl_leader
         self.op_leader = op_leader
-        self.exit = self.load_image('Field\exit.png', 'O')
+        self.exit = self.load_image('Field\\exit.png', 'O')
         self.screen = screen
 
     def load_image(self, name, size='M'):
@@ -124,20 +144,18 @@ class Field:
     def set_crowns(self, win):
         if win:
             if self.round == 1:
-                self.pl_crown = self.load_image('Field\B1Crown.png', 'O')
+                self.pl_crown = IMAGES["Blue1Crown"]
             elif self.round == 2:
-                self.pl_crown = self.load_image('Field\B2Crown.png', 'O')
+                self.pl_crown = IMAGES["Blue2Crown"]
         else:
             if self.round == 1:
-                self.op_crown = self.load_image('Field\R1Crown.png', 'O')
+                self.op_crown = IMAGES["Red1Crown"]
             elif self.round == 2:
-                self.op_crown = self.load_image('Field\R2Crown.png', 'O')
+                self.op_crown = IMAGES["Red2Crown"]
 
-    def draw_text(self, surf, text, size, x, y):
+    def draw_text(self, surf, text, size, x, y, color=(200, 200, 200)):
         font = pygame.font.SysFont(FONT, size, bold=True)
-        text_surface = font.render(text, True, (200, 200, 200))
-        # text_rect = text_surface.get_rect()
-        # text_rect.midtop = (x, y)
+        text_surface = font.render(text, True, color)
         surf.blit(text_surface, (x, y))
 
     def render_text(self, op_leader, pl_leader, pl_hand, pl_deck, pl_dump, op_hand, op_deck, op_dump):
@@ -170,6 +188,24 @@ class Field:
         self.draw_text(self.screen, str(len(op_deck.cards)), 30, 1675, 15)
         self.draw_text(self.screen, str(len(op_dump.cards)), 30, 1810, 15)
 
+        points_sum = 0
+        self.draw_text(self.screen, str(l := sum([i.points for i in self.op_sr.cards])), 30, 495, 60, (0, 0, 0))
+        points_sum += l
+        self.draw_text(self.screen, str(l := sum([i.points for i in self.op_rr.cards])), 30, 495, 210, (0, 0, 0))
+        points_sum += l
+        self.draw_text(self.screen, str(l := sum([i.points for i in self.op_mr.cards])), 30, 495, 370, (0, 0, 0))
+        points_sum += l
+        self.draw_text(self.screen, str(points_sum), 30, 410, 305, (0, 0, 0))
+
+        points_sum = 0
+        self.draw_text(self.screen, str(l := sum([i.points for i in self.pl_sr.cards])), 30, 495, 545, (0, 0, 0))
+        points_sum += l
+        self.draw_text(self.screen, str(l := sum([i.points for i in self.pl_sr.cards])), 30, 495, 695, (0, 0, 0))
+        points_sum += l
+        self.draw_text(self.screen, str(l := sum([i.points for i in self.pl_sr.cards])), 30, 495, 855, (0, 0, 0))
+        points_sum += l
+        self.draw_text(self.screen, str(points_sum), 30, 410, 715, (0, 0, 0))
+
         if self.turn:
             self.draw_text(self.screen, "Ваш ход", 20, 250, 845)
         else:
@@ -189,21 +225,21 @@ class Field:
         if self.player_score > self.opponent_score:
             self.draw_text(self.screen, "Вы выиграли", 30, 750, 400)
             if self.round == 2:
-                self.screen.blit(self.load_image('Field\R0Crown.png', 'O'), (670, 370, 71, 71))
+                self.screen.blit(IMAGES["Red0Crown"], (670, 370, 71, 71))
             else:
-                self.screen.blit(self.load_image('Field\R10Crown.png', 'O'), (670, 370, 71, 71))
-            self.screen.blit(self.load_image('Field\B2Crown.png', 'O'), (670, 370, 71, 71))
-        elif self.player_score > self.opponent_score:
+                self.screen.blit(IMAGES["Red1Crown"], (670, 370, 71, 71))
+            self.screen.blit(IMAGES["Blue2Crown"], (670, 370, 71, 71))
+        elif self.player_score < self.opponent_score:
             self.draw_text(self.screen, "Вы проиграли", 30, 750, 400)
             if self.round == 2:
-                self.screen.blit(self.load_image('Field\B0Crown.png', 'O'), (670, 370, 71, 71))
+                self.screen.blit(IMAGES["Blue0Crown"], (670, 370, 71, 71))
             else:
-                self.screen.blit(self.load_image('Field\B1Crown.png', 'O'), (670, 370, 71, 71))
-            self.screen.blit(self.load_image('Field\R2Crown.png', 'O'), (860, 370, 71, 71))
+                self.screen.blit(IMAGES["Blue1Crown"], (670, 370, 71, 71))
+            self.screen.blit(IMAGES["Red2Crown"], (860, 370, 71, 71))
         else:
             self.draw_text(self.screen, "Ничья", 30, 750, 400)
-            self.screen.blit(self.load_image('Field\R2Crown.png', 'O'), (860, 370, 71, 71))
-            self.screen.blit(self.load_image('Field\B2Crown.png', 'O'), (670, 370, 71, 71))
+            self.screen.blit(IMAGES["Red2Crown"], (860, 370, 71, 71))
+            self.screen.blit(IMAGES["Blue2Crown"], (670, 370, 71, 71))
 
         self.draw_text(self.screen, "Вы", 30, 650, 500)
         self.draw_text(self.screen, "Противник", 30, 910, 500)

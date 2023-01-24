@@ -8,7 +8,7 @@ pygame.init()
 
 
 class Card:
-    def __init__(self, name, base_power, image, armor, provision, card_type, fraction, *tags):
+    def __init__(self, name, base_power, image_name, armor, provision, card_type, fraction, *tags):
         if fraction == "NR":
             self.fraction = "Королевства Севера"
         elif fraction == "NG":
@@ -19,8 +19,8 @@ class Card:
         self.bp = base_power
         self.power = self.bp
         self.armor = armor
+        self.image_path = image_name
         self.provision = provision
-        self.image_path = image
         if type(tags) is tuple:
             self.tags = ' '.join(tags)
         elif type(tags) is str:
@@ -35,17 +35,20 @@ class Card:
             self.description = descriptions[self.name]
         else:
             self.description = "EMPTY DESCRIPTION"
-        self.location = [0, None]  # 0 - deck, 1 - hand, 2 - field, 3 - dump. Second arg is for place in 0, 1 and 3
-        self.status = "in_deck"  # test variable which tell us card condition. Ex. chosen or used and etc
+        self.location = 0  # 0 - deck, 1 - hand, 2 - field, 3 - dump. Second arg is for place in 0, 1 and 3
+        self.status = "passive"
         self.hand_position = None
         self.rect = None
+        self.frame = self.load_card_image("Field\\cardFrame.png", "O")
+        self.Mimage = self.load_card_image('CardsPictures\\' + 'L' + image_name, 'M')  # TODO: change namings, and L to M in image name
+        self.Simage = self.load_card_image('CardsPictures\\' + 'S' + image_name, 'S')
         CLICKABLE.append(self)
 
     def set_tags(self, tagi):
         if self.tags is None:
             self.tags = tagi
 
-    def load_image(self, name, size):
+    def load_card_image(self, name, size):
         directory = os.path.join(name)
         if os.path.isfile(directory):
             if size == 'M':
@@ -61,12 +64,11 @@ class Card:
             font_size = 40
             dx = 267
             text_coord_delta = 15
-            y += 2
         else:
             font_size = 24
             dx = 77
             text_coord_delta = 10
-            y += 2
+        y += 2
 
         font = pygame.font.Font(None, font_size)
         if self.power == self.bp:
@@ -89,22 +91,33 @@ class Card:
                 screen.blit(armor, (x + dx + text_coord_delta, y + text_coord_delta))
 
     def render(self, x, y, size, screen):
-        if size == 'M':
-            self.image = self.load_image('CardsPictures\\' + 'L' + self.image_path, 'M')
-            screen.blit(self.image, (x, y, MCARD_W, MCARD_H))
-            screen.blit(pygame.image.load(os.path.join('CardsPictures\\LLCorner.png')), (x, y))
-            self.display_cards_points(x, y, "M", "p", screen)
-            if self.armor > 0:
-                screen.blit(pygame.image.load(os.path.join('CardsPictures\\LRCorner.png')), (x + 263, y + 2))
-                self.display_cards_points(x, y, "M", "a", screen)
+        if self.location == 1 or self.location == 2:
+            if size == 'M':
+                screen.blit(self.Mimage, (x, y, MCARD_W, MCARD_H))
+                screen.blit(IMAGES["LLCorner"], (x, y))
+                self.display_cards_points(x, y, "M", "p", screen)
+                if self.armor > 0:
+                    screen.blit(IMAGES["LRCorner"], (x + 263, y + 2))
+                    self.display_cards_points(x, y, "M", "a", screen)
+            else:
+                screen.blit(self.Simage, (x, y, SCARD_W, SCARD_H))
+                screen.blit(IMAGES["SLCorner"], (x, y))
+                self.display_cards_points(x, y, "S", "p", screen)
+                if self.armor > 0:
+                    screen.blit(IMAGES["SRCorner"], (x + 77, y + 3))
+                    self.display_cards_points(x, y, "S", "a", screen)
+                if self.status == "chosen":
+                    screen.blit(self.frame, (x - 3, y - 3))
+
+    def kill(self, op_dump, pl_dump, pl_hand, op_hand):
+        self.location = 3
+        if self.fraction == "Skellige":
+            pl_dump.cards.append(self)
+            pl_hand.pop_card(-1)
         else:
-            self.image = self.load_image('CardsPictures\\' + 'S' + self.image_path, 'S')
-            screen.blit(self.image, (x, y, SCARD_W, SCARD_H))
-            screen.blit(pygame.image.load(os.path.join('CardsPictures\\LRight_Corner.png')), (x, y))
-            self.display_cards_points(x, y, "S", "p", screen)
-            if self.armor > 0:
-                screen.blit(pygame.image.load(os.path.join('CardsPictures\\SRCorner.png')), (x + 77, y + 3))
-                self.display_cards_points(x, y, "S", "a", screen)
+            op_dump.cards.append(self)
+            op_hand.pop_card(-1)
+        self.rect = None
 
 
 class Leader(pygame.sprite.Sprite):
