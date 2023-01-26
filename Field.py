@@ -26,10 +26,8 @@ class Row:
         self.cards = []
         CLICKABLE.append(self)
         self.name = self.row + self.player
-        if self.player == "Human":
-            self.frame = self.load_image("Field\\rowe5.png", "O")
-        else:
-            self.frame = self.load_image("Field\\enemy_rowe.png", "O")
+        self.active_frame = self.load_image("Field\\rowe5.png", "O")
+        self.frame = self.load_image("Field\\enemy_rowe.png", "O")
 
     def load_image(self, name, size='M'):
         directory = os.path.join(name)
@@ -44,8 +42,14 @@ class Row:
                 image = pygame.transform.scale(pygame.image.load(directory), (SCARD_W, SCARD_H))
             return image
 
-    def lit(self, screen):
-        screen.blit(self.frame, (self.rect[0] - 10, self.rect[1] - 40, self.rect[2], self.rect[3]))
+    def lit(self, screen, active):
+        if active:
+            if self.player == "Human":
+                screen.blit(self.active_frame, (self.rect[0] - 10, self.rect[1] - 40, self.rect[2], self.rect[3]))
+            else:
+                screen.blit(self.frame, (self.rect[0] - 10, self.rect[1] - 40, self.rect[2], self.rect[3]))
+        else:
+            screen.blit(self.frame, (self.rect[0] - 10, self.rect[1] - 40, self.rect[2], self.rect[3]))
 
 
 class Field:
@@ -108,6 +112,7 @@ class Field:
                              (1575, 230, 320, 458))
             self.panel_name = card.name
             self.panel_text = card.description
+            self.panel_tags = ""
         self.screen.blit(self.op_deck_image, (1630, 0, 105, 150))
         self.screen.blit(self.pl_deck_image, (1630, 935, 105, 150))
         self.screen.blit(self.dump_image, (1765, 0, 105, 150))
@@ -128,18 +133,6 @@ class Field:
 
     def set_panel_card(self, card):
         self.panel = card
-        if type(card) == Card:
-            self.panel_name = card.name
-            self.panel_tags = card.tags
-            self.panel_text = card.description
-        elif type(card) == Leader:
-            self.panel_name = card.name
-            self.panel_text = card.description
-            self.panel_tags = ""
-        else:
-            self.panel_name = ""
-            self.panel_text = ""
-            self.panel_tags = ""
 
     def set_crowns(self, win):
         if win:
@@ -214,7 +207,7 @@ class Field:
     def draw_hand(self, hand):
         for i in range(len(hand.cards)):
             a = i * 110
-            if hand.cards[i].status == "chosen":
+            if hand.cards[i].hover or hand.cards[i].status == "chosen":
                 hand.cards[i].render(475 + a, 935, "S", self.screen)
                 hand.cards[i].rect = (475 + a, 935, SCARD_W, SCARD_H)
             else:

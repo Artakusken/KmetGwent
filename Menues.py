@@ -97,7 +97,7 @@ class Constructor(Menu):
         pass
 
 
-def init_menu(back, start, play, cons, end):
+def init_menu(back, start, play, cons, end, pause):
     image = pygame.transform.scale(pygame.image.load(os.path.join('Field\\NG_loadscreen.png')), (1920, 1080))
     back.blit(image, (0, 0, SWIDTH, SHEIGHT))
 
@@ -119,3 +119,7 @@ def init_menu(back, start, play, cons, end):
     cons.set_button(1050, 20, 200, 75, "Создать новую колоду")
 
     end.set_button(700, 450, 200, 100, "Выйти в меню")
+
+    pause.set_button(800, 900, 200, 100, "Скрыть")
+    pause.set_button(1100, 900, 200, 100, "Закончить смену карт")
+

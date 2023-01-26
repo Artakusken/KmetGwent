@@ -17,18 +17,22 @@ size = SWIDTH, SHEIGHT
 screen = pygame.display.set_mode(size)
 running = True
 clock = pygame.time.Clock()
-c = 0
 
 start_menu = Menu(SWIDTH, SHEIGHT)
 play_menu = Menu(SWIDTH, SHEIGHT)
 constructor = Constructor(SWIDTH, SHEIGHT, screen)
 end_menu = Menu(SWIDTH, SHEIGHT)
+pause_menu = Menu(SWIDTH, SHEIGHT)
 background = pygame.Surface((SWIDTH, SHEIGHT))
 
-menu_dict = {0: start_menu, 1: play_menu, 2: constructor, 3: "Game", 4: end_menu}
+menu_dict = {0: start_menu, 1: play_menu, 2: constructor, 3: "Game", 4: end_menu, 5: pause_menu}
 menu_var = 0
 
-init_menu(background, start_menu, play_menu, constructor, end_menu)
+init_menu(background, start_menu, play_menu, constructor, end_menu, pause_menu)
+CHOSEN_OBJECT = None
+to_render = ""
+GAME_FONT = pygame.font.SysFont(FONT, 30, bold=True)
+PAUSE = False
 
 
 def draw_text(surf, text, text_size, x, y):
@@ -39,16 +43,18 @@ def draw_text(surf, text, text_size, x, y):
     surf.blit(text_area, text_rect)
 
 
-def in_area(coord, mouse_type, game_field):
+def in_area(coord, mouse_type, game_field, display):
     global menu_var
     x, y = coord
     for i in CLICKABLE:
         if i != game_field.rcoin and i != game_field.bcoin and i.rect:
             if i.rect[0] < x < i.rect[0] + i.rect[2] and i.rect[1] < y < i.rect[1] + i.rect[3]:
-                action_on_click(i, mouse_type, game_field)
+                action_on_click(i, mouse_type, game_field, display)
                 if mouse_type == 3:
                     action_on_hover(i, game_field)
                 return str(i.name)
+        if mouse_type == 3:
+            pl_hand.up_when_hovered(coord)
     if mouse_type == 1:
         if 155 < x < 305 and 450 < y < 600:
             if game_field.turn is False:
@@ -70,24 +76,51 @@ def action_on_hover(obj, game_field):
     if type(obj) == Leader:
         game_field.set_panel_card(obj)
     if type(obj) == Row:
-        obj.lit(screen)
+        if not PAUSE:
+            if type(CHOSEN_OBJECT) == Card:
+                obj.lit(screen, True)
+            else:
+                obj.lit(screen, False)
 
 
-def action_on_click(obj, click_type, game_field):
+def action_on_click(obj, click_type, game_field, display):
+    global CHOSEN_OBJECT, PAUSE, menu_var
     if type(obj) == Card:
         if obj.status != "chosen" and click_type == 1:
             obj.status = "chosen"
-        if obj.status == "chosen" and click_type == 2:
-            obj.status = "in hand"
+            if CHOSEN_OBJECT:
+                CHOSEN_OBJECT.status = 'passive'
+            CHOSEN_OBJECT = obj
+        elif obj.status == "chosen" and click_type != 3:
+            obj.status = "passive"
+            CHOSEN_OBJECT = None
     elif type(obj) == Leader:
+        if CHOSEN_OBJECT:
+            CHOSEN_OBJECT.status = 'passive'
+            CHOSEN_OBJECT = obj
         if type(game_field.panel) != Leader and click_type == 1:
             print("Leader extra ability")
         if type(game_field.panel) == Leader and click_type == 2:
             print("Leader main ability")
-    elif type(obj) == Deck:
-        pass
-    elif type(obj) == Dump:
-        pass
+        CHOSEN_OBJECT = obj
+    elif type(obj) == Deck and click_type == 1:
+        if not PAUSE:
+            surface = pygame.transform.smoothscale(display, (500, 400))
+            blur = pygame.transform.smoothscale(surface, (SWIDTH, SHEIGHT))
+            PAUSE = True
+            display.blit(blur, (0, 0))
+            menu_var = 5
+        else:
+            PAUSE = False
+    elif type(obj) == Dump and click_type == 1:
+        if not PAUSE:
+            surface = pygame.transform.smoothscale(screen, (500, 400))
+            blur = pygame.transform.smoothscale(surface, (SWIDTH, SHEIGHT))
+            PAUSE = True
+            display.blit(blur, (0, 0))
+            menu_var = 5
+        else:
+            PAUSE = False
 
 
 def set_game(display, enemy_frac, pl_deck_name='Мужик * на 30', op_deck_name='Мужик * на 30, x2'):
@@ -110,7 +143,6 @@ def set_game(display, enemy_frac, pl_deck_name='Мужик * на 30', op_deck_n
     return player_leader, opponent_leader, game_field, player_deck, opponent_deck, player_hand, opponent_hand, player_dump, opponent_dump
 
 
-to_render = ""
 while running:
     if menu_var < 3:
         time_delta = clock.tick(FPS) / 1000.0
@@ -152,15 +184,25 @@ while running:
             constructor.display_info()
             constructor.display_card()
         pygame.display.update()
-    elif menu_var == 3:
-        if c % 2 == 0:
+    elif menu_var == 3 or menu_var == 5:
+        if not PAUSE:
             field.render_ui_images()
             field.render_ui_leader()
             field.render_text(op_leader, pl_leader, pl_hand, pl_deck, pl_dump, op_hand, op_deck, op_dump)
             field.draw_hand(pl_hand)
-            font = pygame.font.SysFont(FONT, 30, bold=True)
-            text_surface = font.render(to_render, True, (200, 200, 200))
+            text_surface = GAME_FONT.render(to_render, True, (200, 200, 200))
             screen.blit(text_surface, (250, 900))
+        else:
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    PAUSE = False
+                    menu_var = 3
+                    break
+                menu_dict[menu_var].manager.process_events(event)
+                menu_dict[menu_var].manager.update(30 / 1000)
+            if menu_var == 5:
+                menu_dict[menu_var].manager.draw_ui(screen)
+            pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 menu_var = 0
@@ -175,25 +217,18 @@ while running:
                     field.round += 1
                 if event.key == pygame.K_z:
                     pl_hand.cards[-1].kill(op_dump, pl_dump, pl_hand, op_hand)
-                if event.key == pygame.K_f:
-                    surface = pygame.transform.smoothscale(screen, (500, 400))
-                    blur = pygame.transform.smoothscale(surface, (SWIDTH, SHEIGHT))
-                    screen.blit(blur, (0, 0))
-                    c += 1
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    a = in_area(event.pos, 1, field)
+                    a = in_area(event.pos, 1, field, screen)
                     to_render = f"{event.pos}, {a}"
                 elif event.button == 3:
-                    a = in_area(event.pos, 2, field)
+                    a = in_area(event.pos, 2, field, screen)
                     to_render = f"{event.pos}, 2"
-            if event.type == pygame.MOUSEMOTION:
-                font = pygame.font.SysFont(FONT, 30, bold=True)
-                a = in_area(event.pos, 3, field)
-                to_render = f"{event.pos, clock.get_fps()}"
+        a = in_area(pygame.mouse.get_pos(), 3, field, screen)
+        to_render = f"{a, clock.get_fps()}"
         pygame.display.flip()
         clock.tick(FPS)
-    else:
+    elif menu_var == 4:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False

@@ -33,6 +33,13 @@ class Hand:
         if len(self.cards) > 0:
             self.cards.pop(index)
 
+    def up_when_hovered(self, coord):
+        for i in self.cards:
+            if i.rect[0] < coord[0] < i.rect[0] + i.rect[2] and i.rect[1] < coord[1] < i.rect[1] + i.rect[3]:
+                i.hover = True
+            else:
+                i.hover = False
+
 
 class Deck:
     def __init__(self, name, cards):

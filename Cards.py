@@ -39,6 +39,7 @@ class Card:
         self.status = "passive"
         self.hand_position = None
         self.rect = None
+        self.hover = False
         self.frame = self.load_card_image("Field\\cardFrame.png", "O")
         self.Mimage = self.load_card_image('CardsPictures\\' + 'L' + image_name, 'M')  # TODO: change namings, and L to M in image name
         self.Simage = self.load_card_image('CardsPictures\\' + 'S' + image_name, 'S')
@@ -142,6 +143,7 @@ class Leader(pygame.sprite.Sprite):
             self.description = "EMPTY DESCRIPTION"
         self.rability = 3
         self.mability = 1
+        self.status = None
         CLICKABLE.append(self)
 
     def load_image(self, name):
