@@ -16,8 +16,11 @@ class Hand:
         self.cards = []
 
     def draw_cards(self, deck):
-        while self.cards != 10:
+        a = len(self.cards)
+        while len(self.cards) != 10:
             card = deck.cards.pop()
+            card.hand_position = a
+            a += 1
             self.cards.append(card)
 
     def play_card(self, chosen_card, dump):
@@ -26,7 +29,8 @@ class Hand:
     def start_hand(self, deck):
         for i in range(10):
             card = deck.cards.pop()
-            card.location = 1
+            card.location = self
+            card.hand_position = i
             self.cards.append(card)
 
     def pop_card(self, index):
@@ -54,6 +58,9 @@ class Deck:
 
     def set_cards(self, cards):
         random.shuffle(cards)
+        if len(cards) > 1:
+            for i in cards:
+                i.location = self
         return cards
 
     def draw_card(self, hand):

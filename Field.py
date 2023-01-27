@@ -51,6 +51,13 @@ class Row:
         else:
             screen.blit(self.frame, (self.rect[0] - 10, self.rect[1] - 40, self.rect[2], self.rect[3]))
 
+    def up_when_hovered(self, coord):
+        for i in self.cards:
+            if i.rect[0] < coord[0] < i.rect[0] + i.rect[2] and i.rect[1] < coord[1] < i.rect[1] + i.rect[3]:
+                i.hover = True
+            else:
+                i.hover = False
+
 
 class Field:
     def __init__(self, op_leader, pl_leader, screen, op_fraction):
@@ -63,6 +70,7 @@ class Field:
         self.op_mr = Row("melee", "AI")  # opponent melee row
         self.op_rr = Row("ranged", "AI")  # opponent range row
         self.op_sr = Row("siege", "AI")  # opponent siege row
+        self.rows_list = [self.pl_mr, self.pl_rr, self.pl_sr, self.op_mr, self.op_rr, self.op_sr]
         self.op_fraction = op_fraction
         self.turn = None  # true if it's player turn, false if it's ai turn
         self.panel = None
@@ -182,27 +190,47 @@ class Field:
         self.draw_text(self.screen, str(len(op_dump.cards)), 30, 1810, 15)
 
         points_sum = 0
-        self.draw_text(self.screen, str(l := sum([i.points for i in self.op_sr.cards])), 30, 495, 60, (0, 0, 0))
+        self.draw_text(self.screen, str(l := sum([i.power for i in self.op_sr.cards])), 30, 485, 60, (0, 0, 0))
         points_sum += l
-        self.draw_text(self.screen, str(l := sum([i.points for i in self.op_rr.cards])), 30, 495, 210, (0, 0, 0))
+        self.draw_text(self.screen, str(l := sum([i.power for i in self.op_rr.cards])), 30, 485, 210, (0, 0, 0))
         points_sum += l
-        self.draw_text(self.screen, str(l := sum([i.points for i in self.op_mr.cards])), 30, 495, 370, (0, 0, 0))
+        self.draw_text(self.screen, str(l := sum([i.power for i in self.op_mr.cards])), 30, 485, 370, (0, 0, 0))
         points_sum += l
-        self.draw_text(self.screen, str(points_sum), 30, 410, 305, (0, 0, 0))
+        self.draw_text(self.screen, str(points_sum), 30, 400, 305, (0, 0, 0))
 
         points_sum = 0
-        self.draw_text(self.screen, str(l := sum([i.points for i in self.pl_sr.cards])), 30, 495, 545, (0, 0, 0))
+        self.draw_text(self.screen, str(l := sum([i.power for i in self.pl_mr.cards])), 30, 485, 540, (0, 0, 0))
         points_sum += l
-        self.draw_text(self.screen, str(l := sum([i.points for i in self.pl_sr.cards])), 30, 495, 695, (0, 0, 0))
+        self.draw_text(self.screen, str(l := sum([i.power for i in self.pl_rr.cards])), 30, 485, 690, (0, 0, 0))
         points_sum += l
-        self.draw_text(self.screen, str(l := sum([i.points for i in self.pl_sr.cards])), 30, 495, 855, (0, 0, 0))
+        self.draw_text(self.screen, str(l := sum([i.power for i in self.pl_sr.cards])), 30, 485, 850, (0, 0, 0))
         points_sum += l
-        self.draw_text(self.screen, str(points_sum), 30, 410, 715, (0, 0, 0))
+        self.draw_text(self.screen, str(points_sum), 30, 400, 715, (0, 0, 0))
 
         if self.turn:
             self.draw_text(self.screen, "Ваш ход", 20, 250, 845)
         else:
             self.draw_text(self.screen, "Ход противника", 20, 250, 845)
+
+    def count_score(self, player):
+        if player == "Human":
+            points_sum, l = [], 0
+            l = sum([i.power for i in self.pl_sr.cards])
+            points_sum += [l]
+            l = sum([i.power for i in self.pl_rr.cards])
+            points_sum += [l]
+            l = sum([i.power for i in self.pl_mr.cards])
+            points_sum += [l]
+            return points_sum
+        else:
+            points_sum, l = [], 0
+            l = sum([i.power for i in self.op_sr.cards])
+            points_sum += [l]
+            l = sum([i.power for i in self.op_rr.cards])
+            points_sum += [l]
+            l = sum([i.power for i in self.op_mr.cards])
+            points_sum += [l]
+            return points_sum
 
     def draw_hand(self, hand):
         for i in range(len(hand.cards)):
@@ -210,18 +238,31 @@ class Field:
             if hand.cards[i].hover or hand.cards[i].status == "chosen":
                 hand.cards[i].render(475 + a, 935, "S", self.screen)
                 hand.cards[i].rect = (475 + a, 935, SCARD_W, SCARD_H)
+                hand.cards[i].hand_position = i
             else:
                 hand.cards[i].render(475 + a, 945, "S", self.screen)
                 hand.cards[i].rect = (475 + a, 945, SCARD_W, SCARD_H)
 
+    def draw_rows(self):
+        for i in self.rows_list:
+            x, y = i.rect[0], i.rect[1]
+            for j in range(len(i.cards)):
+                a = j * 115
+                if i.cards[j].hover or i.cards[j].status == "chosen":
+                    i.cards[j].render(x + a, y - 10, "S", self.screen)
+                    i.cards[j].rect = (x + a, y - 10, SCARD_W, SCARD_H)
+                else:
+                    i.cards[j].render(x + a, y, "S", self.screen)
+                    i.cards[j].rect = (x + a, y, SCARD_W, SCARD_H)
+
     def draw_end(self):
         if self.player_score > self.opponent_score:
-            self.draw_text(self.screen, "Вы выиграли", 30, 750, 400)
+            self.draw_text(self.screen, "Вы выиграли", 30, 700, 400)
             if self.round == 2:
-                self.screen.blit(IMAGES["Red0Crown"], (670, 370, 71, 71))
+                self.screen.blit(IMAGES["Red0Crown"], (910, 370, 71, 71))
             else:
-                self.screen.blit(IMAGES["Red1Crown"], (670, 370, 71, 71))
-            self.screen.blit(IMAGES["Blue2Crown"], (670, 370, 71, 71))
+                self.screen.blit(IMAGES["Red1Crown"], (910, 370, 71, 71))
+            self.screen.blit(IMAGES["Blue2Crown"], (620, 370, 71, 71))
         elif self.player_score < self.opponent_score:
             self.draw_text(self.screen, "Вы проиграли", 30, 750, 400)
             if self.round == 2:

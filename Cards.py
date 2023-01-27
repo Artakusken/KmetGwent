@@ -92,7 +92,7 @@ class Card:
                 screen.blit(armor, (x + dx + text_coord_delta, y + text_coord_delta))
 
     def render(self, x, y, size, screen):
-        if self.location == 1 or self.location == 2:
+        if self.rect:
             if size == 'M':
                 screen.blit(self.Mimage, (x, y, MCARD_W, MCARD_H))
                 screen.blit(IMAGES["LLCorner"], (x, y))
@@ -111,11 +111,12 @@ class Card:
                     screen.blit(self.frame, (x - 3, y - 3))
 
     def kill(self, op_dump, pl_dump, pl_hand, op_hand):
-        self.location = 3
         if self.fraction == "Skellige":
+            self.location = pl_dump
             pl_dump.cards.append(self)
             pl_hand.pop_card(-1)
         else:
+            self.location = op_dump
             op_dump.cards.append(self)
             op_hand.pop_card(-1)
         self.rect = None
