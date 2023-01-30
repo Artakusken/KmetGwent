@@ -44,6 +44,9 @@ class Hand:
             else:
                 i.hover = False
 
+    def refresh(self):
+        self.cards = []
+
 
 class Deck:
     def __init__(self, name, cards):
@@ -99,3 +102,8 @@ class Dump:
             if self.cards[i].name == name:
                 self.cards.pop(i)
                 return i
+
+    def refresh(self, s):
+        self.cards = []
+        s.append(self)
+

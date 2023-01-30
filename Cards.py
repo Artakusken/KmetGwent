@@ -137,7 +137,7 @@ class Leader(pygame.sprite.Sprite):
         self.image_path = name + '.png'
         self.frames_number = frame_n
         self.rect = pygame.Rect(x, y, LEADER_W, LEADER_H)
-        self.load_image(animation)
+        self.load_image(animation, True)
         if name in descriptions.keys():
             self.description = descriptions[name]
         else:
@@ -145,19 +145,28 @@ class Leader(pygame.sprite.Sprite):
         self.rability = 3
         self.mability = 1
         self.status = None
+        self.frame = self.load_image('Field\\BigCardFrame.png',)
         CLICKABLE.append(self)
 
-    def load_image(self, name):
-        directory = os.path.join('Animations', name + '\\')
-        for i in os.listdir(directory):
-            if os.path.isfile(directory + i):
-                image = pygame.image.load(directory + i)
-                self.frames.append(pygame.transform.scale(image, (LEADER_W, LEADER_H)))
-            else:
-                print(f"Файл с изображением '{i}' не найден")
+    def load_image(self, name, animation=False):
+        if animation:
+            directory = os.path.join('Animations', name + '\\')
+            for i in os.listdir(directory):
+                if os.path.isfile(directory + i):
+                    image = pygame.image.load(directory + i)
+                    self.frames.append(pygame.transform.scale(image, (LEADER_W, LEADER_H)))
+                else:
+                    print(f"Файл с изображением '{i}' не найден")
+        else:
+            directory = os.path.join(name)
+            if os.path.isfile(directory):
+                image = pygame.transform.scale(pygame.image.load(directory), (MCARD_W, MCARD_H))
+                return image
 
     def update(self):
         self.cur_frame = (self.cur_frame + 1) % self.frames_number
 
     def draw(self, screen):
+        if self.status == 'chosen':
+            screen.blit(self.frame, (self.rect[0] - 10, self.rect[1] - 10))
         screen.blit(self.frames[self.cur_frame], (self.rect[0], self.rect[1]))

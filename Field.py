@@ -58,9 +58,13 @@ class Row:
             else:
                 i.hover = False
 
+    def refresh(self, s):
+        self.cards = []
+        s.append(self)
+
 
 class Field:
-    def __init__(self, op_leader, pl_leader, screen, op_fraction):
+    def __init__(self, screen):
         self.player_score, self.opponent_score = 0, 0
         self.field_image = self.load_image('Field\\Field.jpg', "O")
         self.round = 1
@@ -71,7 +75,7 @@ class Field:
         self.op_rr = Row("ranged", "AI")  # opponent range row
         self.op_sr = Row("siege", "AI")  # opponent siege row
         self.rows_list = [self.pl_mr, self.pl_rr, self.pl_sr, self.op_mr, self.op_rr, self.op_sr]
-        self.op_fraction = op_fraction
+        self.op_fraction = None
         self.turn = None  # true if it's player turn, false if it's ai turn
         self.panel = None
         self.panel_name = ""
@@ -80,18 +84,30 @@ class Field:
         self.controls = ["ПКМ - отменить выбор карты", "ЛКМ - сыграть карту"]
         self.dump_image = self.load_image('Field\\Dump.png', 'S')
         self.pl_deck_image = self.load_image('Field\\Nilfgaard.png', 'S')
-        if op_fraction == "NR":
-            self.op_deck_image = self.load_image('Field\\North.png', 'S')
-        else:
-            self.op_deck_image = self.load_image('Field\\Scotoeli.png', 'S')
+        self.op_deck_image = None
         self.rcoin = self.load_image('Field\\RCoin.png', 'K')
         self.bcoin = self.load_image('Field\\BCoin.png', 'K')
         self.op_crown = self.load_image('Field\\R0Crown.png', 'O')
         self.pl_crown = self.load_image('Field\\B0Crown.png', 'O')
-        self.pl_leader = pl_leader
-        self.op_leader = op_leader
+        self.pl_leader = None
+        self.op_leader = None
+        self.pl_deck = None
+        self.op_deck = None
         self.exit = self.load_image('Field\\exit.png', 'O')
         self.screen = screen
+
+    def set_field(self, op_fraction, pl_deck, op_deck):
+        self.op_fraction = op_fraction
+        if op_fraction == "NR":
+            self.op_deck_image = self.load_image('Field\\North.png', 'S')
+            self.op_leader = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 70)
+        elif op_fraction == "Scoia":
+            self.op_deck_image = self.load_image('Field\\Scotoeli.png', 'S')
+            self.op_leader = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 70)
+        self.pl_leader = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 685)
+
+        self.pl_deck = pl_deck
+        self.op_deck = op_deck
 
     def load_image(self, name, size='M'):
         directory = os.path.join(name)
@@ -112,7 +128,7 @@ class Field:
             card = self.panel
             self.panel_name = card.name
             self.panel_tags = card.tags
-            self.panel_text = card.description
+            self.panel_text = card.status
             card.render(1575, 230, "M", self.screen)
         elif type(self.panel) == Leader:
             card = self.panel
@@ -159,16 +175,16 @@ class Field:
         text_surface = font.render(text, True, color)
         surf.blit(text_surface, (x, y))
 
-    def render_text(self, op_leader, pl_leader, pl_hand, pl_deck, pl_dump, op_hand, op_deck, op_dump):
+    def render_text(self, pl_hand, op_hand, pl_dump, op_dump):
         self.draw_text(self.screen, self.panel_name, 30, 1580, 690)
         self.draw_text(self.screen, self.panel_tags, 25, 1580, 730)
         self.draw_text(self.screen, self.panel_text, 20, 1580, 770)
 
-        self.draw_text(self.screen, op_leader.fraction, 20, 20, 20)
-        self.draw_text(self.screen, pl_leader.fraction, 20, 20, 620)
+        self.draw_text(self.screen, self.op_leader.fraction, 20, 20, 20)
+        self.draw_text(self.screen, self.pl_leader.fraction, 20, 20, 620)
 
-        self.draw_text(self.screen, op_leader.name, 20, 20, 40)
-        self.draw_text(self.screen, pl_leader.name, 20, 20, 650)
+        self.draw_text(self.screen, self.op_leader.name, 20, 20, 40)
+        self.draw_text(self.screen, self.pl_leader.name, 20, 20, 650)
 
         self.draw_text(self.screen, self.controls[0], 20, 1580, 160)
         self.draw_text(self.screen, self.controls[1], 20, 1580, 190)
@@ -176,17 +192,17 @@ class Field:
         self.draw_text(self.screen, "ПКМ - основная способность лидера", 20, 20, 1010)
         self.draw_text(self.screen, "ЛКМ - доп. способность лидера", 20, 20, 1040)
 
-        self.draw_text(self.screen, str(op_leader.rability), 20, 250, 325)
-        self.draw_text(self.screen, str(op_leader.mability), 20, 250, 355)
-        self.draw_text(self.screen, str(pl_leader.rability), 20, 250, 945)
-        self.draw_text(self.screen, str(pl_leader.mability), 20, 250, 975)
+        self.draw_text(self.screen, str(self.op_leader.rability), 20, 250, 325)
+        self.draw_text(self.screen, str(self.op_leader.mability), 20, 250, 355)
+        self.draw_text(self.screen, str(self.pl_leader.rability), 20, 250, 945)
+        self.draw_text(self.screen, str(self.pl_leader.mability), 20, 250, 975)
 
         self.draw_text(self.screen, str(len(pl_hand.cards)), 30, 1580, 1045)
-        self.draw_text(self.screen, str(len(pl_deck.cards)), 30, 1675, 1045)
+        self.draw_text(self.screen, str(len(self.pl_deck.cards)), 30, 1675, 1045)
         self.draw_text(self.screen, str(len(pl_dump.cards)), 30, 1810, 1045)
 
         self.draw_text(self.screen, str(len(op_hand.cards)), 30, 1580, 15)
-        self.draw_text(self.screen, str(len(op_deck.cards)), 30, 1675, 15)
+        self.draw_text(self.screen, str(len(self.op_deck.cards)), 30, 1675, 15)
         self.draw_text(self.screen, str(len(op_dump.cards)), 30, 1810, 15)
 
         points_sum = 0
@@ -279,3 +295,26 @@ class Field:
         self.draw_text(self.screen, "Противник", 30, 910, 500)
         self.draw_text(self.screen, str(self.player_score), 30, 650, 550)
         self.draw_text(self.screen, str(self.opponent_score), 30, 910, 550)
+
+    def refresh(self, s):
+        self.player_score, self.opponent_score = 0, 0
+        self.round = 1
+        self.pl_mr.refresh(s)
+        self.pl_rr.refresh(s)
+        self.pl_sr.refresh(s)
+        self.op_mr.refresh(s)
+        self.op_rr.refresh(s)
+        self.op_sr.refresh(s)
+        self.rows_list = [self.pl_mr, self.pl_rr, self.pl_sr, self.op_mr, self.op_rr, self.op_sr]
+        self.op_fraction = None
+        self.turn = None  # true if it's player turn, false if it's ai turn
+        self.panel = None
+        self.panel_name = ""
+        self.panel_tags = ""
+        self.panel_text = ""
+        self.controls = ["ПКМ - отменить выбор карты", "ЛКМ - сыграть карту"]
+        self.op_deck_image = None
+        self.pl_leader = None
+        self.op_leader = None
+        self.pl_deck = None
+        self.op_deck = None
