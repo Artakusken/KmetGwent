@@ -43,7 +43,6 @@ class Card:
         self.frame = self.load_card_image("Field\\cardFrame.png", "O")
         self.Mimage = self.load_card_image('CardsPictures\\' + 'L' + image_name, 'M')  # TODO: change namings, and L to M in image name
         self.Simage = self.load_card_image('CardsPictures\\' + 'S' + image_name, 'S')
-        CLICKABLE.append(self)
 
     def set_tags(self, tagi):
         if self.tags is None:
@@ -144,9 +143,8 @@ class Leader(pygame.sprite.Sprite):
             self.description = "EMPTY DESCRIPTION"
         self.rability = 3
         self.mability = 1
-        self.status = None
-        self.frame = self.load_image('Field\\BigCardFrame.png',)
-        CLICKABLE.append(self)
+        self.status = "passive"
+        self.frame = self.load_image('Field\\BigCardFrame.png')
 
     def load_image(self, name, animation=False):
         if animation:
@@ -167,6 +165,6 @@ class Leader(pygame.sprite.Sprite):
         self.cur_frame = (self.cur_frame + 1) % self.frames_number
 
     def draw(self, screen):
-        if self.status == 'chosen':
+        if self.status != 'passive':
             screen.blit(self.frame, (self.rect[0] - 10, self.rect[1] - 10))
         screen.blit(self.frames[self.cur_frame], (self.rect[0], self.rect[1]))

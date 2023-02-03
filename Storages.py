@@ -47,13 +47,16 @@ class Hand:
     def refresh(self):
         self.cards = []
 
+    def make_move(self):
+        for i in self.cards:
+            i.status = 'passive'
+
 
 class Deck:
     def __init__(self, name, cards):
         self.cards = self.set_cards(cards)
         self.name = name
         if len(self.cards) > 1:
-            CLICKABLE.append(self)
             if self.name == "Мужик * на 30":
                 self.rect = (1630, 935, 105, 150)
             else:
@@ -95,7 +98,6 @@ class Dump:
             self.rect = (1765, 935, 105, 150)
         else:
             self.rect = (1765, 15, 105, 150)
-        CLICKABLE.append(self)
 
     def get_card(self, name):
         for i in range(len(self.cards)):
