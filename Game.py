@@ -1,13 +1,12 @@
 import random
-import pygame
-import os
 import pygame_gui
+import types
 
 from Cards import Card, Leader
 from Field import Field, Row
 from CONSTANTS import *
 from Storages import Dump, Deck, Hand
-from Data import DECKS_LIST, CARDS_LIST
+from Data import DECKS_LIST, CARDS_LIST, METHOD_LIST
 from Menues import Menu, Constructor, init_menu
 
 pygame.init()
@@ -40,6 +39,7 @@ init_menu(background, start_menu, play_menu, constructor, end_menu, pause_menu)
 
 
 def draw_text(surf, text, text_size, x, y):
+    """ Draw line of text in given coordinates"""
     text_font = pygame.font.Font(pygame.font.match_font('arial'), text_size)
     text_area = text_font.render(text, True, (100, 100, 100))
     text_rect = text_area.get_rect()
@@ -48,27 +48,28 @@ def draw_text(surf, text, text_size, x, y):
 
 
 def in_area(coord, mouse_type, display):
+    """ Check if mouse cursor is inside object's collision"""
     global MENU_VAR, CHOSEN_OBJECT, FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP
     x, y = coord
-    for i in CLICKABLE:
-        if i and i.rect:
-            if i.rect[0] < x < i.rect[0] + i.rect[2] and i.rect[1] < y < i.rect[1] + i.rect[3]:
+    for game_object in CLICKABLE:
+        if game_object and game_object.rect:
+            if game_object.rect[0] < x < game_object.rect[0] + game_object.rect[2] and game_object.rect[1] < y < game_object.rect[1] + game_object.rect[3]:
                 if mouse_type == 3:
-                    action_on_hover(i, FIELD)
+                    action_on_hover(game_object, FIELD)
                 else:
                     if FIELD.turn:
-                        action_on_click(i, mouse_type, display)
-                return str(i.name)
+                        action_on_click(game_object, mouse_type, display, coord)
+                return str(game_object.name)
         if mouse_type == 3:
             PLAYER_HAND.up_when_hovered(coord)
-            for i in FIELD.rows_list:
-                i.up_when_hovered(coord)
+            for row in FIELD.rows_list:
+                row.when_hovered(coord, CHOSEN_OBJECT, display)
     if mouse_type == 1:
         if 305 < x < 455 and 450 < y < 600:
             if (FIELD.can_play_card or len(PLAYER_HAND.cards) == 0) and FIELD.turn:
                 FIELD.passes += 2
             FIELD.make_move()
-            PLAYER_HAND.make_move()
+            PLAYER_HAND.make_move(FIELD)
             if FIELD.pl_round_score == 2 or FIELD.op_round_score == 2:
                 MENU_VAR = 5
                 screen.blit(background, (0, 0))
@@ -87,8 +88,14 @@ def in_area(coord, mouse_type, display):
 
 
 def action_on_hover(obj, game_field):
+    """ Act according hovered object"""
     if type(obj) == Card:
         game_field.set_panel_card(obj)
+        if obj.location.str_type == "Row":
+            if type(CHOSEN_OBJECT) == Card and type(CHOSEN_OBJECT.location) == Hand:
+                obj.location.lit(screen, True)
+            else:
+                obj.location.lit(screen, False)
     if type(obj) == Leader:
         game_field.set_panel_card(obj)
     if type(obj) == Row:
@@ -99,44 +106,13 @@ def action_on_hover(obj, game_field):
                 obj.lit(screen, False)
 
 
-def action_on_click(obj, click_type, display):
+def action_on_click(obj, click_type, display, coordinates):
+    """ Act according clicked object"""
     global CHOSEN_OBJECT, PAUSE, MENU_VAR, FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP
     if type(obj) == Card:
-        if type(obj.location) == Hand and FIELD.can_play_card:
-            if obj.status == "passive" and click_type == 1:
-                obj.status = "chosen"
-                if type(CHOSEN_OBJECT) == Card or type(CHOSEN_OBJECT) == Leader:
-                    CHOSEN_OBJECT.status = 'passive'
-                CHOSEN_OBJECT = obj
-            elif obj.status == "chosen":
-                obj.status = "passive"
-                CHOSEN_OBJECT = None
-        elif type(obj.location) == Row:
-            if obj.status == "passive" and click_type == 1:
-                obj.status = "chosen"
-                if type(CHOSEN_OBJECT) == Card or type(CHOSEN_OBJECT) == Leader:
-                    CHOSEN_OBJECT.status = 'passive'
-                CHOSEN_OBJECT = obj
-            elif obj.status == "chosen":
-                obj.status = "passive"
-                CHOSEN_OBJECT = None
+        CHOSEN_OBJECT = obj.on_click(FIELD, click_type, coordinates, CHOSEN_OBJECT)
     elif type(obj) == Leader and obj.fraction == "Королевства Севера":
-        if obj.status == "passive" and click_type == 1:
-            obj.status = "chosen extra ability"
-            if type(CHOSEN_OBJECT) == Card or type(CHOSEN_OBJECT) == Leader:
-                CHOSEN_OBJECT.status = 'passive'
-            CHOSEN_OBJECT = obj
-        elif obj.status == "chosen extra ability" and click_type == 1:
-            obj.status = "passive"
-            CHOSEN_OBJECT = None
-        if obj.status == "passive" and click_type == 2:
-            obj.status = "chosen main ability"
-            if type(CHOSEN_OBJECT) == Card or type(CHOSEN_OBJECT) == Leader:
-                CHOSEN_OBJECT.status = 'passive'
-            CHOSEN_OBJECT = obj
-        elif obj.status == "chosen main ability" and click_type == 2:
-            obj.status = "passive"
-            CHOSEN_OBJECT = None
+        CHOSEN_OBJECT = obj.on_click(FIELD, click_type, CHOSEN_OBJECT)
     elif type(obj) == Deck and click_type == 1:
         if not PAUSE:
             surface = pygame.transform.smoothscale(display, (500, 400))
@@ -155,60 +131,46 @@ def action_on_click(obj, click_type, display):
             MENU_VAR = 4
         else:
             PAUSE = False
+
     elif type(obj) == Row:
         if type(CHOSEN_OBJECT) == Card and obj.player == "Human" and len(obj.cards) < 9 and type(CHOSEN_OBJECT.location) == Hand \
                 and click_type == 1:
-            obj.cards.append(CHOSEN_OBJECT)
-            PLAYER_HAND.cards.pop(CHOSEN_OBJECT.hand_position)
-            if len(PLAYER_HAND.cards) > 1:
-                for i in PLAYER_HAND.cards[CHOSEN_OBJECT.hand_position::]:
-                    i.hand_position -= 1
-            CHOSEN_OBJECT.location = obj
-            CHOSEN_OBJECT.status = "passive"
-            CHOSEN_OBJECT.row = obj.row
-            CHOSEN_OBJECT.column = len(obj.cards) - 1
+            PLAYER_HAND.play_card(CHOSEN_OBJECT)
+            obj.add_card(CHOSEN_OBJECT, click_type, coordinates)
+            CHOSEN_OBJECT.deploy(card=CHOSEN_OBJECT, field=FIELD, row=obj)
             FIELD.can_play_card = False
             CHOSEN_OBJECT = None
 
 
+def set_deck(deck_name):
+    """ Return copy of a deck with 'deck name' from DECK_LIST"""
+    cards = []
+    for i in DECKS_LIST[deck_name].cards:
+        card = i.copy()
+        card.deployment = types.MethodType(METHOD_LIST[i.name + ' deploy'], card)
+        cards.append(card)
+        CLICKABLE.append(card)
+    return Deck(deck_name, cards)
+
+
 def set_game(enemy_frac, pl_deck_name='Мужик * на 30', op_deck_name='Мужик * на 30, x2'):
+    """ Called when game is chosen. Forms players' decks and hands. Choose who has first game turn and set field"""
     global FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP
-    cards = []
-    for i in DECKS_LIST[pl_deck_name].cards:
-        name = CARDS_LIST[i.name].name
-        base_power = CARDS_LIST[i.name].bp
-        armor = CARDS_LIST[i.name].armor
-        provision = CARDS_LIST[i.name].provision
-        image = CARDS_LIST[i.name].image_path
-        tags = CARDS_LIST[i.name].tags
-        card_type = CARDS_LIST[i.name].card_type
-        fraction = CARDS_LIST[i.name].fraction
-        card = Card(name, base_power, image, armor, provision, card_type, fraction, tags)
-        cards.append(card)
-        CLICKABLE.append(card)
-    player_deck = Deck(pl_deck_name, cards)
+    player_deck = set_deck(pl_deck_name)
+    for i in player_deck.cards:
+        i.location = player_deck
     PLAYER_HAND.start_hand(player_deck)
-    cards = []
-    for i in DECKS_LIST[pl_deck_name].cards:
-        name = CARDS_LIST[i.name].name
-        base_power = CARDS_LIST[i.name].bp
-        armor = CARDS_LIST[i.name].armor
-        provision = CARDS_LIST[i.name].provision
-        image = CARDS_LIST[i.name].image_path
-        tags = CARDS_LIST[i.name].tags
-        card_type = CARDS_LIST[i.name].card_type
-        fraction = CARDS_LIST[i.name].fraction
-        card = Card(name, base_power, image, armor, provision, card_type, fraction, tags)
-        cards.append(card)
-        CLICKABLE.append(card)
-    opponent_deck = Deck(op_deck_name, cards)
+    opponent_deck = set_deck(op_deck_name)
+    for i in opponent_deck.cards:
+        i.location = opponent_deck
     OPPONENT_HAND.start_hand(opponent_deck)
     FIELD.turn = random.choice([True, False])
     FIELD.set_field(enemy_frac, player_deck, opponent_deck, CLICKABLE)
-    CLICKABLE.reverse()
+    CLICKABLE.reverse()  # reverse for the right order of object (kinda importance sort)
 
 
 def end_game():
+    """ Nulling CLICKABLE and refreshes game, hands and dumps"""
     global CHOSEN_OBJECT, FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP, CLICKABLE
     CHOSEN_OBJECT = None
     CLICKABLE = []
@@ -264,12 +226,10 @@ while running:
         pygame.display.update()
     elif MENU_VAR == 3 or MENU_VAR == 4:
         if not PAUSE:
-            FIELD.render_ui_images()
-            FIELD.render_ui_leader()
-            FIELD.render_text(PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP)
-            FIELD.draw_hand(PLAYER_HAND)
+            FIELD.render_game_field(PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP)
             a = in_area(pygame.mouse.get_pos(), 3, screen)
-            to_render = f"{a, clock.get_fps()}"
+            # to_render = f"{a, clock.get_fps()}"
+            to_render = f"{a, pygame.mouse.get_pos()}"
             FIELD.draw_rows()
             text_surface = GAME_FONT.render(to_render, True, (200, 200, 200))
             screen.blit(text_surface, (250, 900))

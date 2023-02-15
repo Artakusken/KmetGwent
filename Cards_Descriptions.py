@@ -1,3 +1,3 @@
 descriptions = {
-                "Clan Tuirseach Veteran": "Placeholder Text",
+    "Clan Tuirseach Veteran": "Размещение. Нанесите себе 1 ед. урона за каждую такую же карту в ряду",
 }

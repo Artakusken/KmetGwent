@@ -3,14 +3,15 @@ import pygame
 
 SWIDTH, SHEIGHT = 1920, 1080
 FPS = 30
-FONT = 'arial'
 LEADER_W, LEADER_H = 212, 309
 MCARD_W, MCARD_H = 320, 458
-SCARD_W, SCARD_H = 105, 140
+SCARD_W, SCARD_H = 106, 140
 DECK_SIZE = 30
 HAND_SIZE = 10
 ROW_SIZE = 9
 GET_CARDS = 4
+TEXT_LENGTH = 26
+FONT = 'arial'
 CLICKABLE = []
 IMAGES = {}
 
@@ -39,9 +40,9 @@ IMAGES["Blue2Crown"] = load_image('Field\\B2Crown.png', 'O')
 IMAGES["Red0Crown"] = load_image('Field\\R0Crown.png', 'O')
 IMAGES["Red1Crown"] = load_image('Field\\R1Crown.png', 'O')
 IMAGES["Red2Crown"] = load_image('Field\\R2Crown.png', 'O')
+IMAGES["Position_line"] = load_image('Field\\Position_line.png', 'O')
 
 IMAGES["LLCorner"] = load_image('CardsPictures\\LLCorner.png', 'O')
 IMAGES["LRCorner"] = load_image('CardsPictures\\LRCorner.png', 'O')
 IMAGES["SLCorner"] = load_image('CardsPictures\\SLCorner.png', 'O')
 IMAGES["SRCorner"] = load_image('CardsPictures\\SRCorner.png', 'O')
-

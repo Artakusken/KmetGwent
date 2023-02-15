@@ -10,10 +10,23 @@ def chk_conn(connection):
     except Exception:
         return False
 
+
+def cant_stand_brothers(card, field, row):
+    """Clan Tuirseach Veteran: "Размещение. Нанесите себе 1 ед. урона за каждую такую же карту в ряду"""
+    c = -1
+    for i in row.cards:
+        if i.name == card.name:
+            c += 1
+    card.power -= c
+
+
 CARDS_LIST = {"Нет карты": None}
-CARDS_LIST['Clan Tuirseach Veteran'] = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
+CARDS_LIST['Clan Tuirseach Veteran'] = \
+    Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
+METHOD_LIST = {'Clan Tuirseach Veteran deploy': cant_stand_brothers}
 
 DECKS_LIST = dict()
+
 con = sqlite3.connect("Decks.db")
 if chk_conn(con):
     cur = con.cursor()
@@ -22,17 +35,8 @@ if chk_conn(con):
         if deck[2]:
             cards = []
             for i in deck[2].split(";"):
-                name = CARDS_LIST[i].name
-                base_power = CARDS_LIST[i].bp
-                armor = CARDS_LIST[i].armor
-                provision = CARDS_LIST[i].provision
-                image = CARDS_LIST[i].image_path
-                tags = CARDS_LIST[i].tags
-                card_type = CARDS_LIST[i].card_type
-                fraction = CARDS_LIST[i].fraction
-                cards.append(Card(name, base_power, image, armor, provision, card_type, fraction, tags))
+                card = CARDS_LIST[i].copy()
+                cards.append(card)
             DECKS_LIST[deck[1]] = Deck(deck[1], cards)
         else:
             DECKS_LIST[deck[1]] = Deck(deck[1], deck[2].split(";"))
-
-
