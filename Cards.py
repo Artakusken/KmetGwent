@@ -33,6 +33,8 @@ class Card:
         self.image_path = image_name
         self.provision = provision
         self.card_type = card_type
+        self.font24 = pygame.font.Font(None, 24)
+        self.font40 = pygame.font.Font(None, 40)
 
         self.row = None
         self.column = None
@@ -46,8 +48,7 @@ class Card:
         self.description = self.form_text()
 
         self.frame = self.load_card_image("Field\\cardFrame.png", "O")
-        self.Mimage = self.load_card_image('CardsPictures\\' + 'L' + image_name,
-                                           'M')  # TODO: change namings, and L to M in image name
+        self.Mimage = self.load_card_image('CardsPictures\\' + 'M' + image_name, 'M')
         self.Simage = self.load_card_image('CardsPictures\\' + 'S' + image_name, 'S')
 
         self.deployment = None
@@ -86,16 +87,15 @@ class Card:
     def display_cards_points(self, x, y, size, ptype, screen):
         """ Render card's (placed in the row or hand) points over slot on the left upper corner and armor on the right upper corner"""
         if size == "M":
-            font_size = 40
+            font = self.font40
             dx = 267
             text_coord_delta = 15
         else:
-            font_size = 24
+            font = self.font24
             dx = 77
             text_coord_delta = 10
         y += 2
 
-        font = pygame.font.Font(None, font_size)
         if self.power == self.bp:
             font_color = (200, 200, 200)
         elif self.power > self.bp:
@@ -163,7 +163,7 @@ class Card:
                     if self.status == "chosen":
                         self.status = "passive"
                         return None
-                elif isinstance(game_object, Card):
+                elif isinstance(game_object, Card) and game_object.location.str_type == "Hand" and len(self.location.cards) < 9:
                     game_object.location.cards.pop(game_object.hand_position)
                     if len(game_object.location.cards) > 1:
                         for i in game_object.location.cards[game_object.hand_position::]:

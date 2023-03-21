@@ -57,7 +57,7 @@ class Hand:
     def up_when_hovered(self, coord):
         """ Up hand cards when they are hovered"""
         for i in self.cards:
-            if i.rect[0] < coord[0] < i.rect[0] + i.rect[2] and i.rect[1] < coord[1] < i.rect[1] + i.rect[3] + 10:
+            if i.rect[0] < coord[0] < i.rect[0] + i.rect[2] and i.rect[1] < coord[1] < i.rect[1] + i.rect[3] + 5:
                 i.hover = True
             else:
                 i.hover = False

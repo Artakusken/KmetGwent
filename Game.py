@@ -166,7 +166,7 @@ def set_game(enemy_frac, pl_deck_name='Мужик * на 30', op_deck_name='Му
     OPPONENT_HAND.start_hand(opponent_deck)
     FIELD.turn = random.choice([True, False])
     FIELD.set_field(enemy_frac, player_deck, opponent_deck, CLICKABLE)
-    CLICKABLE.reverse()  # reverse for the right order of object (kinda importance sort)
+    CLICKABLE.reverse()  # reverse for the right order of objects (kinda importance sort)
 
 
 def end_game():
@@ -228,8 +228,8 @@ while running:
         if not PAUSE:
             FIELD.render_game_field(PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP)
             a = in_area(pygame.mouse.get_pos(), 3, screen)
-            # to_render = f"{a, clock.get_fps()}"
-            to_render = f"{a, pygame.mouse.get_pos()}"
+            to_render = f"{a, clock.get_fps()}"
+            # to_render = f"{a, pygame.mouse.get_pos()}"
             FIELD.draw_rows()
             text_surface = GAME_FONT.render(to_render, True, (200, 200, 200))
             screen.blit(text_surface, (250, 900))

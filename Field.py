@@ -40,21 +40,21 @@ class Row:
 
         if player == "Human":
             if self.row == "melee":
-                self.rect = (536, 480, 1034, 140)
+                self.rect = (536, 485, 1034, 140)
             elif self.row == "ranged":
                 self.rect = (536, 640, 1034, 140)
             else:
-                self.rect = (536, 800, 1034, 140)
+                self.rect = (536, 795, 1034, 140)
         else:
             if self.row == "melee":
-                self.rect = (536, 320, 1034, 140)
+                self.rect = (536, 310, 1034, 140)
             elif self.row == "ranged":
-                self.rect = (536, 160, 1034, 140)
+                self.rect = (536, 155, 1034, 140)
             else:
-                self.rect = (536, 5, 1034, 140)
+                self.rect = (536, 0, 1034, 140)
 
         self.active_frame = self.load_image("Field\\rowe5.png", "O")
-        self.frame = self.load_image("Field\\enemy_rowe.png", "O")
+        self.frame = self.load_image("Field\\enemy_row.png", "O")
         self.position_line = IMAGES["Position_line"]
 
     def load_image(self, name, size='M'):
@@ -75,11 +75,11 @@ class Row:
         """ When row is hovered it's also lit with frame. This func decide what frame to use."""
         if active:
             if self.player == "Human" and len(self.cards) < 9:
-                screen.blit(self.active_frame, (self.rect[0] - 10, self.rect[1] - 40, self.rect[2], self.rect[3]))
+                screen.blit(self.active_frame, (self.rect[0], self.rect[1], self.rect[2], self.rect[3]))
             else:
-                screen.blit(self.frame, (self.rect[0] - 10, self.rect[1] - 40, self.rect[2], self.rect[3]))
+                screen.blit(self.frame, (self.rect[0], self.rect[1], self.rect[2], self.rect[3]))
         else:
-            screen.blit(self.frame, (self.rect[0] - 10, self.rect[1] - 40, self.rect[2], self.rect[3]))
+            screen.blit(self.frame, (self.rect[0], self.rect[1], self.rect[2], self.rect[3]))
 
     def when_hovered(self, coord, chosen_obj, display):
         """ Up a hovered card, render position line and remembering last hovered card"""
@@ -109,7 +109,7 @@ class Row:
                     elif self.last_hovered_card[1] == "r":
                         display.blit(self.position_line,
                                      (self.cards[self.last_hovered_card[0]].rect[0] + SCARD_W, self.rect[1]))
-                if card.hover and (card.rect[1] + 10 < coord[1] < card.rect[1] + SCARD_H + 10) and (
+                if card.hover and (card.rect[1] + 5 < coord[1] < card.rect[1] + SCARD_H + 5) and (
                         card.rect[0] < coord[0] < card.rect[0] + SCARD_W):
                     card.hover = True
                 else:
@@ -278,6 +278,8 @@ class Field:
         self.pl_deck = None
         self.op_deck = None
 
+        self.text_font30 = pygame.font.SysFont('arial', 30, bold=True)
+        self.text_font20 = pygame.font.SysFont('arial', 20, bold=True)
         self.screen = screen
         self.history = []
 
@@ -293,7 +295,7 @@ class Field:
         elif op_fraction == "Scoia":
             self.op_deck_image = self.load_image('Field\\Scotoeli.png', 'S')
             self.op_leader = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 70)
-        self.pl_leader = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 685)
+        self.pl_leader = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 695)
         storage.append(self.pl_leader)
         storage.append(self.op_leader)
         self.pl_deck = pl_deck
@@ -396,49 +398,51 @@ class Field:
 
     def draw_text(self, surf, text, size, x, y, color=(200, 200, 200)):
         """ Draw line of text in given coordinates"""
-        font = pygame.font.SysFont(FONT, size, bold=True)
-        text_surface = font.render(text, True, color)
-        surf.blit(text_surface, (x, y))
+        # font = pygame.font.SysFont(FONT, size, bold=True)
+        if size == 30:
+            surf.blit(self.text_font30.render(text, True, color), (x, y))
+        else:
+            surf.blit(self.text_font20.render(text, True, color), (x, y))
 
     def render_text(self, pl_hand, op_hand, pl_dump, op_dump):
         """ Draw all text info on screen"""
-        self.draw_text(self.screen, self.op_leader.fraction, 20, 20, 20)
-        self.draw_text(self.screen, self.pl_leader.fraction, 20, 20, 620)
+        self.draw_text(self.screen, self.op_leader.fraction, 20, 20, 15)
+        self.draw_text(self.screen, self.pl_leader.fraction, 20, 20, 635)
 
         self.draw_text(self.screen, self.op_leader.name, 20, 20, 40)
-        self.draw_text(self.screen, self.pl_leader.name, 20, 20, 650)
+        self.draw_text(self.screen, self.pl_leader.name, 20, 20, 660)
 
         self.draw_text(self.screen, self.controls[0], 20, 1580, 160)
         self.draw_text(self.screen, self.controls[1], 20, 1580, 190)
 
-        self.draw_text(self.screen, "ПКМ - основная способность лидера", 20, 20, 1010)
-        self.draw_text(self.screen, "ЛКМ - доп. способность лидера", 20, 20, 1040)
+        self.draw_text(self.screen, "ПКМ - основная способность лидера", 20, 20, 1020)
+        self.draw_text(self.screen, "ЛКМ - доп. способность лидера", 20, 20, 1050)
 
-        self.draw_text(self.screen, str(self.op_leader.rability), 20, 250, 325)
-        self.draw_text(self.screen, str(self.op_leader.mability), 20, 250, 355)
-        self.draw_text(self.screen, str(self.pl_leader.rability), 20, 250, 945)
-        self.draw_text(self.screen, str(self.pl_leader.mability), 20, 250, 975)
+        self.draw_text(self.screen, str(self.op_leader.rability), 30, 250, 110)
+        self.draw_text(self.screen, str(self.op_leader.mability), 30, 250, 70)
+        self.draw_text(self.screen, str(self.pl_leader.rability), 30, 250, 935)
+        self.draw_text(self.screen, str(self.pl_leader.mability), 30, 250, 975)
 
         self.draw_text(self.screen, str(len(pl_hand.cards)), 30, 1580, 1045)
-        self.draw_text(self.screen, str(len(self.pl_deck.cards)), 30, 1675, 1045)
+        self.draw_text(self.screen, str(len(self.pl_deck.cards)), 30, 1665, 1045)
         self.draw_text(self.screen, str(len(pl_dump.cards)), 30, 1810, 1045)
 
-        self.draw_text(self.screen, str(len(op_hand.cards)), 30, 1580, 15)
-        self.draw_text(self.screen, str(len(self.op_deck.cards)), 30, 1675, 15)
-        self.draw_text(self.screen, str(len(op_dump.cards)), 30, 1810, 15)
+        self.draw_text(self.screen, str(len(op_hand.cards)), 30, 1580, 5)
+        self.draw_text(self.screen, str(len(self.op_deck.cards)), 30, 1665, 5)
+        self.draw_text(self.screen, str(len(op_dump.cards)), 30, 1810, 5)
 
         self.draw_text(self.screen, str(self.count_score("AI")), 30, 400, 305, (0, 0, 0))
         self.draw_text(self.screen, str(self.count_score("Human")), 30, 400, 715, (0, 0, 0))
 
         if self.turn:
-            self.draw_text(self.screen, "Ваш ход", 20, 250, 845)
+            self.draw_text(self.screen, "Ваш ход", 30, 295, 395)
         else:
-            self.draw_text(self.screen, "Ход противника", 20, 250, 845)
+            self.draw_text(self.screen, "Ход противника", 30, 185, 395)
 
         if self.can_play_card:
-            self.draw_text(self.screen, "Спасовать", 20, 305, 600)
+            self.draw_text(self.screen, "Спасовать", 30, 260, 610)
         else:
-            self.draw_text(self.screen, "Передать ход", 20, 305, 600)
+            self.draw_text(self.screen, "Передать ход", 30, 215, 610)
 
     def render_panel(self):
         """ Draw all info (name, tags, description, image) of hovered card"""
@@ -453,7 +457,7 @@ class Field:
             self.draw_text(self.screen, card.status, 30, 1700, 830, (0, 0, 0))
         elif type(self.panel) == Leader:
             card = self.panel
-            self.screen.blit(self.load_image('CardsPictures\\' + 'L' + card.image_path, 'M'),
+            self.screen.blit(self.load_image('CardsPictures\\' + card.image_path, 'M'),
                              (1575, 230, 320, 458))
             self.panel_name = card.name
             self.panel_text = card.description
@@ -472,12 +476,12 @@ class Field:
         self.screen.blit(self.dump_image, (1765, 0, 105, 150))
         self.screen.blit(self.dump_image, (1765, 935, 105, 150))
         if self.turn:
-            self.screen.blit(self.bcoin, (305, 450, 150, 150))
+            self.screen.blit(self.bcoin, (320, 443, 150, 150))
         else:
-            self.screen.blit(self.rcoin, (305, 450, 150, 150))
-        self.screen.blit(self.exit, (5, 500, 75, 75))
-        self.screen.blit(IMAGES[self.op_crowns[self.op_round_score]], (280, 305, 71, 71))
-        self.screen.blit(IMAGES[self.pl_crowns[self.pl_round_score]], (280, 925, 71, 71))
+            self.screen.blit(self.rcoin, (320, 443, 150, 150))
+        self.screen.blit(self.exit, (5, 485, 75, 75))
+        self.screen.blit(IMAGES[self.op_crowns[self.op_round_score]], (280, 70, 71, 71))
+        self.screen.blit(IMAGES[self.pl_crowns[self.pl_round_score]], (280, 935, 71, 71))
 
     def render_leader(self):
         """ Draw leaders' animated sprites"""
@@ -496,27 +500,27 @@ class Field:
                 hand.cards[i].rect = (start_x + a, 935, SCARD_W, SCARD_H)
                 hand.cards[i].hand_position = i
             else:
-                hand.cards[i].render(start_x + a, 945, "S", self.screen)
-                hand.cards[i].rect = (start_x + a, 945, SCARD_W, SCARD_H)
+                hand.cards[i].render(start_x + a, 940, "S", self.screen)
+                hand.cards[i].rect = (start_x + a, 940, SCARD_W, SCARD_H)
 
     def draw_rows(self):
         """ Draw all cards of all rows which are located in row during the round"""
         for i in self.rows_list:
             length = len(i.cards)
             if length % 2 == 0:
-                start_x = (536 + 1030 / 2) - (length // 2) * SCARD_W - length * 10 + 50
+                start_x = (536 + 1030 / 2) - (length // 2) * SCARD_W - length * 8 + 50
             else:
-                start_x = (536 + 1030 / 2) - (length // 2) * SCARD_W - length * 10
+                start_x = (536 + 1030 / 2) - (length // 2) * SCARD_W - length * 8
             x, y = start_x, i.rect[1]
             for j in range(length):
                 a = j * SCARD_W
                 if i.cards[j].hover or i.cards[j].status == "chosen":
-                    i.cards[j].render(x + a, y - 10, "S", self.screen)
-                    i.cards[j].rect = (x + a, y - 10, SCARD_W, SCARD_H)
+                    i.cards[j].render(x + a, y - 5, "S", self.screen)
+                    i.cards[j].rect = (x + a, y - 5, SCARD_W, SCARD_H)
                 else:
                     i.cards[j].render(x + a, y, "S", self.screen)
                     i.cards[j].rect = (x + a, y, SCARD_W, SCARD_H)
-                x += 10
+                x += 6
 
     def render_game_field(self, pl_hand, op_hand, pl_dump, op_dump):
         """ All render functions are used here"""
