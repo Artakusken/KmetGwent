@@ -48,8 +48,9 @@ class Card:
         self.description = self.form_text()
 
         self.frame = self.load_card_image("Field\\cardFrame.png", "O")
-        self.Mimage = self.load_card_image('CardsPictures\\' + 'M' + image_name, 'M')
-        self.Simage = self.load_card_image('CardsPictures\\' + 'S' + image_name, 'S')
+        self.Mimage = self.load_card_image('CardsPictures\\' + 'M' + image_name, 'O')
+        self.MSimage = self.load_card_image('CardsPictures\\' + 'MS' + image_name, 'O')
+        self.Simage = self.load_card_image('CardsPictures\\' + 'S' + image_name, 'O')
 
         self.deployment = None
 
@@ -90,6 +91,10 @@ class Card:
             font = self.font40
             dx = 267
             text_coord_delta = 15
+        elif size == "D":
+            font = self.font40
+            dx = 160
+            text_coord_delta = 15
         else:
             font = self.font24
             dx = 77
@@ -125,6 +130,13 @@ class Card:
                 if self.armor > 0:
                     screen.blit(IMAGES["LRCorner"], (x + 263, y + 2))
                     self.display_cards_points(x, y, "M", "a", screen)
+            elif size == 'D':
+                screen.blit(self.MSimage, (x, y, LEADER_W, LEADER_H))
+                screen.blit(IMAGES["LLCorner"], (x, y))
+                self.display_cards_points(x, y, "D", "p", screen)
+                if self.armor > 0:
+                    screen.blit(IMAGES["LRCorner"], (x + 156, y + 4))
+                    self.display_cards_points(x, y, "D", "a", screen)
             else:
                 screen.blit(self.Simage, (x, y, SCARD_W, SCARD_H))
                 screen.blit(IMAGES["SLCorner"], (x, y))

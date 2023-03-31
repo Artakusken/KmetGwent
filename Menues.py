@@ -11,11 +11,72 @@ class Menu:
     def __init__(self, x, y):
         self.buttons = []
         self.manager = pygame_gui.UIManager((x, y), 'theme.json')
+        self.font20 = pygame.font.SysFont(FONT, 20, bold=True)
+        self.font25 = pygame.font.SysFont(FONT, 25, bold=True)
 
     def set_button(self, x, y, width, height, text):
         """ Create a button with assigned args"""
         self.buttons.append(pygame_gui.elements.UIButton(relative_rect=pygame.Rect((x, y), (width, height)), text=text,
                                                          manager=self.manager))
+
+    def draw_text(self, surf, text, size, x, y, color=(200, 200, 200)):
+        """ Draw line of text in given coordinates"""
+        if size == 20:
+            font = self.font20
+        else:
+            font = self.font25
+        text_surface = font.render(text, True, color)
+        surf.blit(text_surface, (x, y))
+
+
+class GameUI:
+    """ Menus that are shown during game """
+    def __init__(self):
+        self.buttons_group = dict()
+        self.state = "pause"
+        self.font20 = pygame.font.SysFont(FONT, 20, bold=True)
+        self.font25 = pygame.font.SysFont(FONT, 25, bold=True)
+
+    def add_button(self, x, y, width, height, text, group):
+        """ Add a button to buttons_group """
+        if group in self.buttons_group.keys():
+            button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((x, y), (width, height)), text=text,
+                                                  manager=self.buttons_group[group][0])
+            self.buttons_group[group][1].append(button)
+        else:
+            self.create_group(group)
+            button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((x, y), (width, height)), text=text,
+                                                  manager=self.buttons_group[group][0])
+            self.buttons_group[group][1].append(button)
+
+    def create_group(self, name):
+        """ New group with its own manager"""
+        if name not in self.buttons_group.keys():
+            self.buttons_group[name] = (pygame_gui.UIManager((SWIDTH, SHEIGHT), 'theme.json'), [])
+
+
+class Matchmaking(Menu):
+    """A menu to display available opponents and the ability to choose who to play with """
+    def __init__(self, x, y, screen):
+        super().__init__(x, y)
+        self.players_list = [1, 2, 4, 5, 6, 7, 8, 0]
+        self.connect()
+        self.init_enemies()
+        self.screen = screen
+
+    def connect(self):
+        """ Connection to server """
+        pass
+
+    def init_enemies(self):
+        """ Get info about players and create button for each of them"""
+        for player in range(len(self.players_list)):
+            self.set_button(300, 80 + 70 * player, 150, 60, str(self.players_list[player]))
+
+    def show_enemies(self):
+        """ Display available players """
+        for player in range(len(self.players_list)):
+            self.draw_text(self.screen, f"Сыграть с {self.players_list[player]}", 20, 100, 100 + 70 * player, color=(20, 20, 220))
 
 
 class Constructor(Menu):
@@ -47,12 +108,6 @@ class Constructor(Menu):
 
         self.current_deck = None
         self.screen = screen
-
-    def draw_text(self, surf, text, size, x, y, color=(200, 200, 200)):
-        """ Draw line of text in given coordinates"""
-        font = pygame.font.SysFont(FONT, size, bold=True)
-        text_surface = font.render(text, True, color)
-        surf.blit(text_surface, (x, y))
 
     def display_deck(self):
         """ Render a column of chosen deck's cards (name, power and provision)"""
@@ -108,7 +163,7 @@ class Constructor(Menu):
         pass
 
 
-def init_menu(back, start, play, cons, end, pause):
+def init_menu(back, start, play, cons, end, dd, mulligan, online):
     """ Create all buttons for the menus and load background image"""
     image = pygame.transform.scale(pygame.image.load(os.path.join('Field\\NG_loadscreen.png')), (1920, 1080))
     back.blit(image, (0, 0, SWIDTH, SHEIGHT))
@@ -117,9 +172,12 @@ def init_menu(back, start, play, cons, end, pause):
     start.set_button(300, 850, 200, 75, "Конструктор колоды")
     start.set_button(300, 950, 200, 75, "Выйти")
 
-    play.set_button(150, 700, 200, 75, "Битва с Северянами")
-    play.set_button(450, 700, 200, 75, "Битва с длинноухими")
+    play.set_button(50, 700, 200, 75, "Битва с Северянами")
+    play.set_button(300, 700, 200, 75, "Найти противника")
+    play.set_button(550, 700, 200, 75, "Битва с длинноухими")
     play.set_button(300, 900, 200, 75, "Выйти в меню")
+
+    online.set_button(300, 900, 200, 75, "Выйти в меню")
 
     cons.set_button(50, 100, 200, 75, "Сохранить колоду")
     cons.set_button(250, 100, 200, 75, "Очистить колоду")
@@ -132,5 +190,8 @@ def init_menu(back, start, play, cons, end, pause):
 
     end.set_button(700, 450, 200, 100, "Выйти в меню")
 
-    pause.set_button(800, 900, 200, 100, "Скрыть")
-    pause.set_button(1100, 900, 200, 100, "Закончить смену карт")
+    dd.set_button(20, 1020, 120, 50, "Скрыть")
+
+    mulligan.add_button(20, 1020, 120, 50, "Скрыть", "pause")
+    mulligan.add_button(160, 1020, 220, 50, "Закончить смену карт", "pause")
+    mulligan.add_button(20, 1020, 100, 50, "Вернуть", "game")

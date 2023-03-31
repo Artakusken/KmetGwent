@@ -21,8 +21,7 @@ def cant_stand_brothers(card, field, row):
 
 
 CARDS_LIST = {"Нет карты": None}
-CARDS_LIST['Clan Tuirseach Veteran'] = \
-    Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
+CARDS_LIST['Clan Tuirseach Veteran'] = Card('Clan Tuirseach Veteran', 10, "Clan Tuirseach Veteran.png", 2, 5, "U", "Skellige", "Warrior", "Support")
 METHOD_LIST = {'Clan Tuirseach Veteran deploy': cant_stand_brothers}
 
 DECKS_LIST = dict()
@@ -37,6 +36,6 @@ if chk_conn(con):
             for i in deck[2].split(";"):
                 card = CARDS_LIST[i].copy()
                 cards.append(card)
-            DECKS_LIST[deck[1]] = Deck(deck[1], cards)
+            DECKS_LIST[deck[1]] = Deck(deck[1], "me", cards)
         else:
-            DECKS_LIST[deck[1]] = Deck(deck[1], deck[2].split(";"))
+            DECKS_LIST[deck[1]] = Deck(deck[1], "me", deck[2].split(";"))

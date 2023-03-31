@@ -53,7 +53,7 @@ class Row:
             else:
                 self.rect = (536, 0, 1034, 140)
 
-        self.active_frame = self.load_image("Field\\rowe5.png", "O")
+        self.active_frame = self.load_image("Field\\row.png", "O")
         self.frame = self.load_image("Field\\enemy_row.png", "O")
         self.position_line = IMAGES["Position_line"]
 
@@ -75,7 +75,7 @@ class Row:
         """ When row is hovered it's also lit with frame. This func decide what frame to use."""
         if active:
             if self.player == "Human" and len(self.cards) < 9:
-                screen.blit(self.active_frame, (self.rect[0], self.rect[1], self.rect[2], self.rect[3]))
+                screen.blit(self.active_frame, (self.rect[0] - 5, self.rect[1] - 5, self.rect[2], self.rect[3]))
             else:
                 screen.blit(self.frame, (self.rect[0], self.rect[1], self.rect[2], self.rect[3]))
         else:
@@ -84,7 +84,7 @@ class Row:
     def when_hovered(self, coord, chosen_obj, display):
         """ Up a hovered card, render position line and remembering last hovered card"""
         for index, card in enumerate(self.cards):
-            if card.rect[0] < coord[0] < card.rect[0] + card.rect[2] and card.rect[1] < coord[1] < card.rect[1] + card.rect[3]:
+            if card.rect[0] < coord[0] < card.rect[0] + card.rect[2] and card.rect[1] < coord[1] < card.rect[1] + card.rect[3] - 5:  # possible (rare) mistake when last hovered card is none because card hasn't been hovered (-5 of y axis)
                 if isinstance(chosen_obj, Card) and isinstance(chosen_obj.location, Hand):
                     if coord[0] < card.rect[0] + (card.rect[2] / 2):
                         display.blit(self.position_line, (card.rect[0] - 10, self.rect[1]))
@@ -238,6 +238,7 @@ class Field:
 
     def __init__(self, screen):
         self.field_image = self.load_image('Field\\Field.jpg', "O")
+        self.background = None
         self.rcoin = self.load_image('Field\\RCoin.png', 'K')
         self.bcoin = self.load_image('Field\\BCoin.png', 'K')
         self.dump_image = self.load_image('Field\\Dump.png', 'S')
@@ -277,6 +278,7 @@ class Field:
         self.op_leader = None
         self.pl_deck = None
         self.op_deck = None
+        self.chosen_storage = None
 
         self.text_font30 = pygame.font.SysFont('arial', 30, bold=True)
         self.text_font20 = pygame.font.SysFont('arial', 20, bold=True)
@@ -331,10 +333,11 @@ class Field:
         self.pl_round_score = 0
         self.history = []
 
-    def make_move(self):
+    def end_move(self):
         """ When coin is pressed this func transfer a possibility to play to another player"""
         if self.passes == 2:
             self.end_round()
+            return 5
         if not self.turn:
             for i in self.rows_list[3::]:
                 i.make_turn()
@@ -344,9 +347,10 @@ class Field:
             self.turn = False
             for i in self.rows_list[:3]:
                 i.make_turn()
+        return 3
 
     def end_round(self):
-        """ When both players passed, func increment round's number and scores win of a round for a player, who has more points"""
+        """ When both players passed, func increments round number and scores win of a round for a player, who has more points"""
         self.round += 1
         self.history.append((self.player_score, self.opponent_score))
         if self.player_score > self.opponent_score:
@@ -379,7 +383,15 @@ class Field:
 
     def set_panel_card(self, card):
         """ Set self.panel with a card class object"""
+        if card is None:
+            self.panel_name = ""
+            self.panel_tags = ""
+            self.panel_text = ""
         self.panel = card
+
+    def set_background(self, image):
+        """ Darken and blurred display screen used as background for a deck and dump view mode"""
+        self.background = image
 
     def count_score(self, player):
         """ Return sum or rows scores"""
@@ -398,7 +410,6 @@ class Field:
 
     def draw_text(self, surf, text, size, x, y, color=(200, 200, 200)):
         """ Draw line of text in given coordinates"""
-        # font = pygame.font.SysFont(FONT, size, bold=True)
         if size == 30:
             surf.blit(self.text_font30.render(text, True, color), (x, y))
         else:
@@ -500,8 +511,8 @@ class Field:
                 hand.cards[i].rect = (start_x + a, 935, SCARD_W, SCARD_H)
                 hand.cards[i].hand_position = i
             else:
-                hand.cards[i].render(start_x + a, 940, "S", self.screen)
-                hand.cards[i].rect = (start_x + a, 940, SCARD_W, SCARD_H)
+                hand.cards[i].render(start_x + a, 945, "S", self.screen)
+                hand.cards[i].rect = (start_x + a, 945, SCARD_W, SCARD_H)
 
     def draw_rows(self):
         """ Draw all cards of all rows which are located in row during the round"""
@@ -515,8 +526,8 @@ class Field:
             for j in range(length):
                 a = j * SCARD_W
                 if i.cards[j].hover or i.cards[j].status == "chosen":
-                    i.cards[j].render(x + a, y - 5, "S", self.screen)
-                    i.cards[j].rect = (x + a, y - 5, SCARD_W, SCARD_H)
+                    i.cards[j].render(x + a, y - 10, "S", self.screen)
+                    i.cards[j].rect = (x + a, y - 10, SCARD_W, SCARD_H)
                 else:
                     i.cards[j].render(x + a, y, "S", self.screen)
                     i.cards[j].rect = (x + a, y, SCARD_W, SCARD_H)
@@ -529,6 +540,44 @@ class Field:
         self.render_hand(pl_hand)
         self.render_panel()
         self.render_text(pl_hand, op_hand, pl_dump, op_dump)
+
+    def check_deck(self, deck):
+        """ Render list of cards which are in deck"""
+        c = 0
+        x, y = 250, 50
+        self.screen.blit(self.background, (0, 0))
+        for i in deck.fake_order:
+            deck.cards[i].render(x + (c % 5 * 250), y + (350 * (c // 5)), "D", self.screen)
+            deck.cards[i].rect = (x + (c % 5 * 250), y + (350 * (c // 5)), LEADER_W, LEADER_H)
+            c += 1
+
+    def check_dump(self, dump):
+        """ Render list of cards which are in dump """
+        c = 0
+        x, y = 250, 50
+        self.screen.blit(self.background, (0, 0))
+        for i in dump.cards:
+            i.render(x + (c % 5 * 250), y + (350 * (c // 5)), "D", self.screen)
+            i.rect = (x + (c % 5 * 250), y + (350 * (c // 5)), LEADER_W, LEADER_H)
+            c += 1
+
+    def mulligan_hand(self, menu_state):
+        """ Render list of cards which are in hand """
+        if menu_state == "pause":
+            c = 0
+            x, y = 250, 250
+            self.screen.blit(self.background, (0, 0))
+            for i in self.chosen_storage.cards:
+                i.render(x + (c % 5 * 250), y + (350 * (c // 5)), "D", self.screen)
+                i.rect = (x + (c % 5 * 250), y + (350 * (c // 5)), LEADER_W, LEADER_H)
+                c += 1
+            self.draw_text(self.screen, "Осталось замен " + str(self.chosen_storage.mulligans), 20, 50, 50)
+
+    def back_to_game(self, storage):
+        """ Null cards' collisions and field chosen storage"""
+        for i in storage.cards:
+           i.rect = None
+        self.chosen_storage = None
 
     def draw_end(self):
         """ Result is displayed, when game ends"""

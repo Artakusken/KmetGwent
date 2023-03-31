@@ -7,7 +7,8 @@ from Field import Field, Row
 from CONSTANTS import *
 from Storages import Dump, Deck, Hand
 from Data import DECKS_LIST, CARDS_LIST, METHOD_LIST
-from Menues import Menu, Constructor, init_menu
+from Menues import Menu, Constructor, init_menu, Matchmaking, GameUI
+from PIL import Image, ImageEnhance, ImageFilter
 
 pygame.init()
 
@@ -18,9 +19,12 @@ clock = pygame.time.Clock()
 
 start_menu = Menu(SWIDTH, SHEIGHT)
 play_menu = Menu(SWIDTH, SHEIGHT)
+online_menu = Matchmaking(SWIDTH, SHEIGHT, screen)
 constructor = Constructor(SWIDTH, SHEIGHT, screen)
 end_menu = Menu(SWIDTH, SHEIGHT)
-pause_menu = Menu(SWIDTH, SHEIGHT)
+dd_menu = Menu(SWIDTH, SHEIGHT)
+# mulligan_menu = Menu(SWIDTH, SHEIGHT)
+mulligan_menu = GameUI()
 background = pygame.Surface((SWIDTH, SHEIGHT))
 
 MENU_VAR = 0
@@ -34,8 +38,8 @@ PLAYER_DUMP = Dump("Сброс игрока")
 OPPONENT_DUMP = Dump("Сброс ИИ")
 to_render = ""
 
-menu_dict = {0: start_menu, 1: play_menu, 2: constructor, 3: "Game", 4: pause_menu, 5: end_menu}
-init_menu(background, start_menu, play_menu, constructor, end_menu, pause_menu)
+menu_dict = {-1: online_menu, 0: start_menu, 1: play_menu, 2: constructor, 3: "Game", 4: dd_menu, 5: mulligan_menu, 6: end_menu}
+init_menu(background, start_menu, play_menu, constructor, end_menu, dd_menu, mulligan_menu, online_menu)
 
 
 def draw_text(surf, text, text_size, x, y):
@@ -47,8 +51,48 @@ def draw_text(surf, text, text_size, x, y):
     surf.blit(text_area, text_rect)
 
 
+def pause_game():
+    """ Clear panel, set darken and blurred background, pause game"""
+    global MENU_VAR, CHOSEN_OBJECT, FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP, PAUSE
+    FIELD.set_panel_card(None)
+    FIELD.render_game_field(PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP)
+    FIELD.draw_rows()
+    pygame.image.save(screen, "field_screen.jpg")
+    im = Image.open("field_screen.jpg")
+    im = im.filter(ImageFilter.GaussianBlur(radius=2))
+    im = ImageEnhance.Brightness(im).enhance(0.7)
+    im.save("background_field.jpg")
+    FIELD.set_background(load_image("background_field.jpg", "O"))
+    MENU_VAR = 4
+    PAUSE = True
+
+
+def end_move():
+    """ When coin is clicked, this func checks field stats and
+        change field if game is going to have a new round """
+    global MENU_VAR, CHOSEN_OBJECT, FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP
+    if (FIELD.can_play_card or len(PLAYER_HAND.cards) == 0) and FIELD.turn:
+        FIELD.passes += 2
+    MENU_VAR = FIELD.end_move()
+    PLAYER_HAND.end_move(FIELD)
+    if FIELD.pl_round_score == 2 or FIELD.op_round_score == 2:
+        MENU_VAR = 6
+        screen.blit(background, (0, 0))
+        FIELD.draw_end()
+        return
+    if MENU_VAR == 5:
+        pause_game()
+        FIELD.chosen_storage = PLAYER_HAND
+    if FIELD.turn is False:
+        CHOSEN_OBJECT = None
+        return str("Красная монета")
+    else:
+        CHOSEN_OBJECT = None
+        return str("Синяя монета")
+
+
 def in_area(coord, mouse_type, display):
-    """ Check if mouse cursor is inside object's collision"""
+    """ Check if mouse cursor is inside object's collision """
     global MENU_VAR, CHOSEN_OBJECT, FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP
     x, y = coord
     for game_object in CLICKABLE:
@@ -57,8 +101,7 @@ def in_area(coord, mouse_type, display):
                 if mouse_type == 3:
                     action_on_hover(game_object, FIELD)
                 else:
-                    if FIELD.turn:
-                        action_on_click(game_object, mouse_type, display, coord)
+                    action_on_click(game_object, mouse_type, display, coord)
                 return str(game_object.name)
         if mouse_type == 3:
             PLAYER_HAND.up_when_hovered(coord)
@@ -66,25 +109,24 @@ def in_area(coord, mouse_type, display):
                 row.when_hovered(coord, CHOSEN_OBJECT, display)
     if mouse_type == 1:
         if 305 < x < 455 and 450 < y < 600:
-            if (FIELD.can_play_card or len(PLAYER_HAND.cards) == 0) and FIELD.turn:
-                FIELD.passes += 2
-            FIELD.make_move()
-            PLAYER_HAND.make_move(FIELD)
-            if FIELD.pl_round_score == 2 or FIELD.op_round_score == 2:
-                MENU_VAR = 5
-                screen.blit(background, (0, 0))
-                FIELD.draw_end()
-            if FIELD.turn is False:
-                CHOSEN_OBJECT = None
-                return str("Красная монета")
-            else:
-                CHOSEN_OBJECT = None
-                return str("Синяя монета")
+            end_move()
         if 5 < x < 80 and 500 < y < 575:
-            MENU_VAR = 5
+            MENU_VAR = 6
             screen.blit(background, (0, 0))
             FIELD.draw_end()
     return "Nothing"
+
+
+def deck_dump_hover(cards, mouse_pos, click_type):
+    """ Check if mouse cursor is inside card's collision from deck, dump or hand"""
+    global MENU_VAR
+    x, y = mouse_pos
+    for card in cards:
+        if card.rect[0] < x < card.rect[0] + card.rect[2] and card.rect[1] < y < card.rect[1] + card.rect[3]:
+            if click_type == 3:
+                action_on_hover(card, FIELD)
+            elif click_type == 1 and MENU_VAR == 5:
+                card.location.mulligan(FIELD.pl_deck, card)
 
 
 def action_on_hover(obj, game_field):
@@ -109,30 +151,20 @@ def action_on_hover(obj, game_field):
 def action_on_click(obj, click_type, display, coordinates):
     """ Act according clicked object"""
     global CHOSEN_OBJECT, PAUSE, MENU_VAR, FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP
-    if type(obj) == Card:
+    if type(obj) == Card and FIELD.turn:
         CHOSEN_OBJECT = obj.on_click(FIELD, click_type, coordinates, CHOSEN_OBJECT)
-    elif type(obj) == Leader and obj.fraction == "Королевства Севера":
+    elif type(obj) == Leader and obj.fraction == "Королевства Севера" and FIELD.turn:
         CHOSEN_OBJECT = obj.on_click(FIELD, click_type, CHOSEN_OBJECT)
-    elif type(obj) == Deck and click_type == 1:
+    elif type(obj) == Deck and click_type == 1 and obj.player == "me":
         if not PAUSE:
-            surface = pygame.transform.smoothscale(display, (500, 400))
-            blur = pygame.transform.smoothscale(surface, (SWIDTH, SHEIGHT))
-            PAUSE = True
-            display.blit(blur, (0, 0))
-            MENU_VAR = 4
-        else:
-            PAUSE = False
+            pause_game()
+            FIELD.chosen_storage = obj
+            obj.random_order()
     elif type(obj) == Dump and click_type == 1:
         if not PAUSE:
-            surface = pygame.transform.smoothscale(screen, (500, 400))
-            blur = pygame.transform.smoothscale(surface, (SWIDTH, SHEIGHT))
-            PAUSE = True
-            display.blit(blur, (0, 0))
-            MENU_VAR = 4
-        else:
-            PAUSE = False
-
-    elif type(obj) == Row:
+            pause_game()
+            FIELD.chosen_storage = obj
+    elif type(obj) == Row and FIELD.turn:
         if type(CHOSEN_OBJECT) == Card and obj.player == "Human" and len(obj.cards) < 9 and type(CHOSEN_OBJECT.location) == Hand \
                 and click_type == 1:
             PLAYER_HAND.play_card(CHOSEN_OBJECT)
@@ -142,7 +174,7 @@ def action_on_click(obj, click_type, display, coordinates):
             CHOSEN_OBJECT = None
 
 
-def set_deck(deck_name):
+def set_deck(deck_name, player):
     """ Return copy of a deck with 'deck name' from DECK_LIST"""
     cards = []
     for i in DECKS_LIST[deck_name].cards:
@@ -150,17 +182,17 @@ def set_deck(deck_name):
         card.deployment = types.MethodType(METHOD_LIST[i.name + ' deploy'], card)
         cards.append(card)
         CLICKABLE.append(card)
-    return Deck(deck_name, cards)
+    return Deck(deck_name, player, cards)
 
 
 def set_game(enemy_frac, pl_deck_name='Мужик * на 30', op_deck_name='Мужик * на 30, x2'):
     """ Called when game is chosen. Forms players' decks and hands. Choose who has first game turn and set field"""
     global FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP
-    player_deck = set_deck(pl_deck_name)
+    player_deck = set_deck(pl_deck_name, "me")
     for i in player_deck.cards:
         i.location = player_deck
     PLAYER_HAND.start_hand(player_deck)
-    opponent_deck = set_deck(op_deck_name)
+    opponent_deck = set_deck(op_deck_name, "enemy")
     for i in opponent_deck.cards:
         i.location = opponent_deck
     OPPONENT_HAND.start_hand(opponent_deck)
@@ -194,6 +226,9 @@ while running:
                     MENU_VAR = 0
                 if event.ui_element.text == "Играть":
                     MENU_VAR = 1
+                if event.ui_element.text == "Найти противника":
+                    MENU_VAR = -1
+                    menu_dict[MENU_VAR].init_enemies()
                 if event.ui_element.text == "Конструктор колоды":
                     MENU_VAR = 2
                 if event.ui_element.text == "Переименовать колоду":
@@ -223,43 +258,90 @@ while running:
             constructor.display_deck()
             constructor.display_info()
             constructor.display_card()
+        if MENU_VAR == -1:
+            online_menu.show_enemies()
         pygame.display.update()
-    elif MENU_VAR == 3 or MENU_VAR == 4:
+    elif MENU_VAR == 3 or MENU_VAR == 4 or MENU_VAR == 5:
         if not PAUSE:
             FIELD.render_game_field(PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP)
             a = in_area(pygame.mouse.get_pos(), 3, screen)
-            to_render = f"{a, clock.get_fps()}"
-            # to_render = f"{a, pygame.mouse.get_pos()}"
+            # to_render = f"{a, clock.get_fps()}"
+            to_render = f"{a, pygame.mouse.get_pos()}"
             FIELD.draw_rows()
             text_surface = GAME_FONT.render(to_render, True, (200, 200, 200))
             screen.blit(text_surface, (250, 900))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    MENU_VAR = 0
+                if event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1:
+                        a = in_area(event.pos, 1, screen)
+                        to_render = f"{event.pos}, {a}"
+                    elif event.button == 3:
+                        a = in_area(event.pos, 2, screen)
+                        to_render = f"{event.pos}, 2"
+                        if type(CHOSEN_OBJECT) == Card:
+                            CHOSEN_OBJECT.status = "passive"
+                            CHOSEN_OBJECT = None
+            pygame.display.flip()
+            clock.tick(FPS)
         else:
+            if isinstance(FIELD.chosen_storage, Deck):
+                FIELD.check_deck(FIELD.chosen_storage)
+            elif isinstance(FIELD.chosen_storage, Hand):
+                FIELD.mulligan_hand(mulligan_menu.state)
+                MENU_VAR = 5
+            elif isinstance(FIELD.chosen_storage, Dump):
+                FIELD.check_dump(FIELD.chosen_storage)
+            else:
+                FIELD.mulligan_hand(mulligan_menu.state)
+                FIELD.render_game_field(PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP)
+                a = in_area(pygame.mouse.get_pos(), 3, screen)
+                FIELD.draw_rows()
+                clock.tick(FPS)
+
+            if FIELD.chosen_storage:
+                deck_dump_hover(FIELD.chosen_storage.cards, pygame.mouse.get_pos(), 3)
+            FIELD.render_panel()
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    PAUSE = False
-                    MENU_VAR = 3
-                    break
-                menu_dict[MENU_VAR].manager.process_events(event)
-                menu_dict[MENU_VAR].manager.update(30 / 1000)
+                    pos = event.pos
+                    if MENU_VAR == 4:
+                        if any([i.hover_point(pos[0], pos[1]) for i in dd_menu.buttons]):
+                            PAUSE = False
+                            MENU_VAR = 3
+                            FIELD.back_to_game(FIELD.chosen_storage)
+                            FIELD.set_panel_card(None)
+                            break
+                    elif MENU_VAR == 5:
+                        if mulligan_menu.state == "pause" and mulligan_menu.buttons_group["pause"][1][1].hover_point(pos[0], pos[1]):
+                            PAUSE = False
+                            MENU_VAR = 3
+                            FIELD.back_to_game(FIELD.chosen_storage)
+                            FIELD.set_panel_card(None)
+                            break
+                        elif mulligan_menu.state == "pause" and mulligan_menu.buttons_group["pause"][1][0].hover_point(pos[0], pos[1]):
+                            FIELD.back_to_game(FIELD.chosen_storage)
+                            FIELD.set_panel_card(None)
+                            mulligan_menu.state = "game"
+                        elif mulligan_menu.state == "game" and mulligan_menu.buttons_group["game"][1][0].hover_point(pos[0], pos[1]):
+                            mulligan_menu.state = "pause"
+                            FIELD.chosen_storage = PLAYER_HAND
+                            pause_game()
+
+                    if FIELD.chosen_storage:
+                        deck_dump_hover(FIELD.chosen_storage.cards, pos, 1)
+                if MENU_VAR == 4:
+                    dd_menu.manager.update(clock.tick(FPS) / 1000.0)
+                elif MENU_VAR == 5:
+                    mulligan_menu.buttons_group[mulligan_menu.state][0].update(clock.tick(FPS) / 1000.0)
+
             if MENU_VAR == 4:
-                menu_dict[MENU_VAR].manager.draw_ui(screen)
+                dd_menu.manager.draw_ui(screen)
+            elif MENU_VAR == 5:
+                mulligan_menu.buttons_group[mulligan_menu.state][0].draw_ui(screen)
             pygame.display.update()
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                MENU_VAR = 0
-            if event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:
-                    a = in_area(event.pos, 1, screen)
-                    to_render = f"{event.pos}, {a}"
-                elif event.button == 3:
-                    a = in_area(event.pos, 2, screen)
-                    to_render = f"{event.pos}, 2"
-                    if type(CHOSEN_OBJECT) == Card:
-                        CHOSEN_OBJECT.status = "passive"
-                        CHOSEN_OBJECT = None
-        pygame.display.flip()
-        clock.tick(FPS)
-    elif MENU_VAR == 5:
+    elif MENU_VAR == 6:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False

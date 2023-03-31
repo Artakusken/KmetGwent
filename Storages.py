@@ -21,6 +21,7 @@ class Hand:
         self.cards = []
         self.round = 0
         self.str_type = "Hand"
+        self.mulligans = 4
 
     def draw_cards(self, deck):
         """ Add up to 4 cards to hand"""
@@ -67,13 +68,38 @@ class Hand:
         self.cards = []
         self.round = 0
 
-    def make_move(self, field):
+    def end_move(self, field):
         """ Make hand be ready for a new play"""
         for i in self.cards:
             i.status = 'passive'
         if self.round < field.round:
-            self.draw_cards(field.pl_deck)
-            self.round += 1
+            self.mulligans = 4
+            self.end_round(field.pl_deck)
+
+    def end_round(self, deck):
+        """ Draw new cards to hand and increment round value"""
+        self.draw_cards(deck)
+        self.round += 1
+
+    def mulligan(self, deck, card):
+        """ If card is clicked in mulligan menu, it shuffles into the deck and last card from deck replace it in hand """
+        if self.mulligans > 0:
+            to_deck = self.cards.pop(card.hand_position)
+            new_card = deck.draw_card(self)
+
+            # self.cards = self.cards[:card.hand_position] + new_card + self.cards[card.hand_position::]
+            self.cards.insert(card.hand_position, new_card)
+            deck.cards.insert(random.randrange(len(deck.cards) + 1), to_deck)
+
+            new_card.hand_position = card.hand_position
+            new_card.location = self
+
+            to_deck.rect = None
+            to_deck.location = deck
+            to_deck.hand_position = None
+            to_deck.status = "passive"
+
+            self.mulligans -= 1
 
 
 class Deck:
@@ -82,9 +108,12 @@ class Deck:
     These cards are seen only for a player, their points don't affect on score and player don't know their order.
     """
 
-    def __init__(self, name, cards):
+    def __init__(self, name, player, cards):
         self.cards = self.set_cards(cards)
         self.name = name
+        self.player = player
+        self.fake_order = []
+        self.str_type = "deck"
         if len(self.cards) > 1:
             if self.name == "Мужик * на 30":
                 self.rect = (1630, 935, 105, 150)
@@ -99,11 +128,14 @@ class Deck:
                 i.location = self
         return cards
 
+    def random_order(self):
+        self.fake_order = random.sample(range(len(self.cards)), k=len(self.cards))
+
     def draw_card(self, hand):
         """ Take card from the deck"""
-        if len(hand) < 10:
+        if len(hand.cards) < 10:
             card = self.cards.pop()
-            hand.cards.append(card)
+            return card
 
     def pop_card(self, chosen_card, dump):
         """ Move card from deck to dump (undone)"""
@@ -132,6 +164,7 @@ class Dump:
     def __init__(self, name):
         self.cards = []
         self.name = name
+        self.str_type = "dump"
         if self.name == "Сброс игрока":
             self.rect = (1765, 935, 105, 150)
         else:
