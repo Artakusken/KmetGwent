@@ -1,6 +1,9 @@
+import pygame.image
 import pygame_gui
 from CONSTANTS import *
-from Data import DECKS_LIST, CARDS_LIST
+# from Data import DECKS_LIST, CARDS_LIST
+from Data import CARDS_LIST
+from Player import Player
 from Storages import Deck
 from Cards_Descriptions import descriptions
 
@@ -82,21 +85,21 @@ class Matchmaking(Menu):
 class Constructor(Menu):
     """ A class to represent deck constructor, which give player an ability to create decks and change existing ones"""
 
-    def __init__(self, x, y, screen):
+    def __init__(self, x, y, screen, player):
         super().__init__(x, y)
-        self.entry_name = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((250, 20), (250, 75)),
+        self.entry_name = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((220, 20), (250, 75)),
                                                               manager=self.manager, initial_text="")
         self.entry_index = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((1610, 1030), (300, 50)),
                                                                manager=self.manager,
                                                                initial_text="Введите индекс карты для удаления")
-        self.decks = DECKS_LIST
+        self.decks = player.decks
         self.cards = CARDS_LIST
         self.chosen_card = None
         self.decks_drop_box = pygame_gui.elements.UIDropDownMenu(self.decks.keys(), manager=self.manager,
-                                                                 relative_rect=pygame.Rect((520, 20), (250, 75)),
+                                                                 relative_rect=pygame.Rect((480, 20), (250, 75)),
                                                                  starting_option=list(self.decks.keys())[0])
         self.cards_drop_box = pygame_gui.elements.UIDropDownMenu(self.cards.keys(), manager=self.manager,
-                                                                 relative_rect=pygame.Rect((780, 20), (250, 75)),
+                                                                 relative_rect=pygame.Rect((740, 20), (250, 75)),
                                                                  starting_option=list(self.cards.keys())[0])
         self.max_provision = 150
         self.provision = 0
@@ -108,6 +111,7 @@ class Constructor(Menu):
 
         self.current_deck = None
         self.screen = screen
+        self.player = player
 
     def display_deck(self):
         """ Render a column of chosen deck's cards (name, power and provision)"""
@@ -133,10 +137,10 @@ class Constructor(Menu):
     def display_card(self):
         """ Display info about card on the right of menu"""
         if self.chosen_card in descriptions.keys():
-            image_name = "CardsPictures\\L" + self.chosen_card + ".png"
-            image = pygame.transform.scale(pygame.image.load(os.path.join(image_name)), (496, 707))
+            image_name = f"CardsPictures\\{self.cards[self.chosen_card].fraction}\\L" + self.chosen_card + ".png"
+            image = pygame.transform.scale(pygame.image.load(os.path.join(image_name)), (572, 820))
             lines = self.cards[self.chosen_card].description
-            self.screen.blit(image, (1050, 140, 496, 707))
+            self.screen.blit(image, (980, 120, 572, 820))
             self.draw_text(self.screen, self.cards[self.chosen_card].name, 25, 1560, 160)
             self.draw_text(self.screen, self.cards[self.chosen_card].tags, 25, 1560, 200)
             for i in range(len(lines)):
@@ -146,14 +150,14 @@ class Constructor(Menu):
     def rename_deck(self, new_name):
         """ Update DECK list with new name and rename deck itself"""
         if type(self.current_deck) == Deck:
-            DECKS_LIST[new_name] = DECKS_LIST.pop(self.current_deck.name)
+            self.player.decks[new_name] = self.player.decks.pop(self.current_deck.name)
             self.current_deck.update_name(new_name)
 
     def update_decks_box(self):
         """ Reset decks' drop box"""
         self.decks_drop_box.kill()
         self.decks_drop_box = pygame_gui.elements.UIDropDownMenu(self.decks.keys(), manager=self.manager,
-                                                                 relative_rect=pygame.Rect((520, 20), (250, 75)),
+                                                                 relative_rect=pygame.Rect((490, 20), (250, 75)),
                                                                  starting_option=list(self.decks.keys())[0])
 
     def new_deck(self):
@@ -163,9 +167,9 @@ class Constructor(Menu):
         pass
 
 
-def init_menu(back, start, play, cons, end, dd, mulligan, online):
+def init_menu(back, start, play, cons, end, dd, mulligan):
     """ Create all buttons for the menus and load background image"""
-    image = pygame.transform.scale(pygame.image.load(os.path.join('Field\\NG_loadscreen.png')), (1920, 1080))
+    image = pygame.transform.scale(pygame.image.load(os.path.join('Field\\loadscreen.png')), (1920, 1080))
     back.blit(image, (0, 0, SWIDTH, SHEIGHT))
 
     start.set_button(300, 750, 200, 75, "Играть")
@@ -173,20 +177,17 @@ def init_menu(back, start, play, cons, end, dd, mulligan, online):
     start.set_button(300, 950, 200, 75, "Выйти")
 
     play.set_button(50, 700, 200, 75, "Битва с Северянами")
-    play.set_button(300, 700, 200, 75, "Найти противника")
     play.set_button(550, 700, 200, 75, "Битва с длинноухими")
     play.set_button(300, 900, 200, 75, "Выйти в меню")
 
-    online.set_button(300, 900, 200, 75, "Выйти в меню")
-
-    cons.set_button(50, 100, 200, 75, "Сохранить колоду")
-    cons.set_button(250, 100, 200, 75, "Очистить колоду")
-    cons.set_button(1480, 950, 200, 75, "Добавить карту")
-    cons.set_button(1710, 950, 200, 75, "Удалить карту")
-    cons.set_button(50, 20, 200, 75, "Переименовать колоду")
+    cons.set_button(20, 100, 200, 75, "Сохранить колоду")
+    cons.set_button(230, 100, 200, 75, "Очистить колоду")
+    cons.set_button(1450, 950, 200, 75, "Добавить карту")
+    cons.set_button(1680, 950, 200, 75, "Удалить карту")
+    cons.set_button(20, 20, 200, 75, "Переименовать колоду")
 
     cons.set_button(1700, 20, 200, 75, "Выйти в меню")
-    cons.set_button(1050, 20, 200, 75, "Создать новую колоду")
+    cons.set_button(1000, 20, 200, 75, "Создать новую колоду")
 
     end.set_button(700, 450, 200, 100, "Выйти в меню")
 
@@ -194,4 +195,7 @@ def init_menu(back, start, play, cons, end, dd, mulligan, online):
 
     mulligan.add_button(20, 1020, 120, 50, "Скрыть", "pause")
     mulligan.add_button(160, 1020, 220, 50, "Закончить смену карт", "pause")
+    mulligan.add_button(90, 965, 220, 50, "Посмотреть колоду", "pause")
+    mulligan.add_button(90, 910, 220, 50, "Посмотреть сброс", "pause")
+    mulligan.add_button(90, 855, 220, 50, "Вернуться к смене", "pause")
     mulligan.add_button(20, 1020, 100, 50, "Вернуть", "game")

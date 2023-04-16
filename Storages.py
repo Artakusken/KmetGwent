@@ -19,6 +19,7 @@ class Hand:
 
     def __init__(self):
         self.cards = []
+        self.eliminated_cards = []
         self.round = 0
         self.str_type = "Hand"
         self.mulligans = 4
@@ -87,19 +88,22 @@ class Hand:
             to_deck = self.cards.pop(card.hand_position)
             new_card = deck.draw_card(self)
 
-            # self.cards = self.cards[:card.hand_position] + new_card + self.cards[card.hand_position::]
             self.cards.insert(card.hand_position, new_card)
-            deck.cards.insert(random.randrange(len(deck.cards) + 1), to_deck)
+            self.eliminated_cards.append(to_deck)
 
             new_card.hand_position = card.hand_position
             new_card.location = self
 
-            to_deck.rect = None
-            to_deck.location = deck
-            to_deck.hand_position = None
-            to_deck.status = "passive"
-
             self.mulligans -= 1
+
+    def end_mulligan(self, deck):
+        """ Shuffle all eliminated cards to deck """
+        for i in self.eliminated_cards:
+            deck.cards.insert(random.randrange(len(deck.cards) + 1), i)
+            i.rect = None
+            i.location = deck
+            i.hand_position = None
+            i.status = "passive"
 
 
 class Deck:
@@ -113,9 +117,9 @@ class Deck:
         self.name = name
         self.player = player
         self.fake_order = []
-        self.str_type = "deck"
+        self.str_type = "Deck"
         if len(self.cards) > 1:
-            if self.name == "Мужик * на 30":
+            if self.player == "Me":
                 self.rect = (1630, 935, 105, 150)
             else:
                 self.rect = (1630, 15, 105, 150)
@@ -129,6 +133,7 @@ class Deck:
         return cards
 
     def random_order(self):
+        """ Set a sequence of random cards indexes """
         self.fake_order = random.sample(range(len(self.cards)), k=len(self.cards))
 
     def draw_card(self, hand):
@@ -138,12 +143,12 @@ class Deck:
             return card
 
     def pop_card(self, chosen_card, dump):
-        """ Move card from deck to dump (undone)"""
+        """ Move card from deck to dump (undone) """
         index = chosen_card
         dump.cards.append(self.cards.pop(index))
 
     def update_name(self, new_name):
-        """ Set a new name for the deck"""
+        """ Set a new name for the chosen deck """
         con = sqlite3.connect("Decks.db")
         if chk_conn(con):
             cur = con.cursor()
@@ -164,7 +169,7 @@ class Dump:
     def __init__(self, name):
         self.cards = []
         self.name = name
-        self.str_type = "dump"
+        self.str_type = "Dump"
         if self.name == "Сброс игрока":
             self.rect = (1765, 935, 105, 150)
         else:

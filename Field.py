@@ -1,6 +1,7 @@
 from CONSTANTS import *
 from Cards import Card, Leader
 from Storages import Hand
+from math import atan2, cos, sin, radians
 import pygame
 import os
 
@@ -38,11 +39,11 @@ class Row:
         self.str_type = "Row"
         self.last_hovered_card = None
 
-        if player == "Human":
+        if player == "Me":
             if self.row == "melee":
-                self.rect = (536, 485, 1034, 140)
+                self.rect = (536, 475, 1034, 140)
             elif self.row == "ranged":
-                self.rect = (536, 640, 1034, 140)
+                self.rect = (536, 635, 1034, 140)
             else:
                 self.rect = (536, 795, 1034, 140)
         else:
@@ -74,8 +75,8 @@ class Row:
     def lit(self, screen, active):
         """ When row is hovered it's also lit with frame. This func decide what frame to use."""
         if active:
-            if self.player == "Human" and len(self.cards) < 9:
-                screen.blit(self.active_frame, (self.rect[0] - 5, self.rect[1] - 5, self.rect[2], self.rect[3]))
+            if self.player == "Me" and len(self.cards) < 9:
+                screen.blit(self.active_frame, (self.rect[0] - 5, self.rect[1] - 1, self.rect[2], self.rect[3]))
             else:
                 screen.blit(self.frame, (self.rect[0], self.rect[1], self.rect[2], self.rect[3]))
         else:
@@ -149,9 +150,14 @@ class Row:
         self.cards = []
         storage.append(self)
 
-    def clear(self):
+    def clear(self, dump):
         """ When game ends, this func clear row's cards list and delete all cards collisions"""
         for i in self.cards:
+            i.location = dump
+            i.row = None
+            i.column = None
+            i.status = "passive"
+            dump.cards.append(i)
             i.rect = None
         self.cards = []
 
@@ -236,7 +242,7 @@ class Field:
             the list which stores values of player's and opponent's points when round ends
     """
 
-    def __init__(self, screen):
+    def __init__(self, screen, player_dump, player_hand):
         self.field_image = self.load_image('Field\\Field.jpg', "O")
         self.background = None
         self.rcoin = self.load_image('Field\\RCoin.png', 'K')
@@ -254,12 +260,14 @@ class Field:
         self.op_crowns = {0: "Red0Crown", 1: "Red1Crown", 2: "Red2Crown"}
         self.pl_crowns = {0: "Blue0Crown", 1: "Blue1Crown", 2: "Blue2Crown"}
 
-        self.pl_mr = Row("melee", "Human", self)  # player melee row
-        self.pl_rr = Row("ranged", "Human", self)  # player range row
-        self.pl_sr = Row("siege", "Human", self)  # player siege row
-        self.op_mr = Row("melee", "AI", self)  # opponent melee row
-        self.op_rr = Row("ranged", "AI", self)  # opponent range row
-        self.op_sr = Row("siege", "AI", self)  # opponent siege row
+        self.pl_mr = Row("melee", "Me", self)  # player melee row
+        self.pl_rr = Row("ranged", "Me", self)  # player range row
+        self.pl_sr = Row("siege", "Me", self)  # player siege row
+        self.op_mr = Row("melee", "Op", self)  # opponent melee row
+        self.op_rr = Row("ranged", "Op", self)  # opponent range row
+        self.op_sr = Row("siege", "Op", self)  # opponent siege row
+        self.my_dump = player_dump
+        self.my_hand = player_hand
         self.rows_list = [self.pl_mr, self.pl_rr, self.pl_sr, self.op_mr, self.op_rr, self.op_sr]
 
         self.turn = None
@@ -293,11 +301,11 @@ class Field:
         self.op_fraction = op_fraction
         if op_fraction == "NR":
             self.op_deck_image = self.load_image('Field\\North.png', 'S')
-            self.op_leader = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 70)
+            self.op_leader = Leader("Roche180png", "Вернон Роше", "NR", 181, 20, 70)
         elif op_fraction == "Scoia":
             self.op_deck_image = self.load_image('Field\\Scotoeli.png', 'S')
-            self.op_leader = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 70)
-        self.pl_leader = Leader("Roche180png", "Vernon Roche", "NR", 181, 20, 695)
+            self.op_leader = Leader("Roche180png", "Вернон Роше", "NR", 181, 20, 70)
+        self.pl_leader = Leader("Joachim De Wett180png", "Йоахим де Ветт", "NG", 181, 20, 695)
         storage.append(self.pl_leader)
         storage.append(self.op_leader)
         self.pl_deck = pl_deck
@@ -333,15 +341,23 @@ class Field:
         self.pl_round_score = 0
         self.history = []
 
+    def new_turn(self):
+        for i in self.rows_list:
+            for j in i.cards:
+                j.new_turn()
+
     def end_move(self):
         """ When coin is pressed this func transfer a possibility to play to another player"""
         if self.passes == 2:
             self.end_round()
+            if self.turn:
+                self.new_turn()
             return 5
         if not self.turn:
             for i in self.rows_list[3::]:
                 i.make_turn()
             self.turn = True
+            self.new_turn()
             self.can_play_card = True
         else:
             self.turn = False
@@ -363,7 +379,7 @@ class Field:
         if self.round == 3:
             return None
         for i in self.rows_list:
-            i.clear()
+            i.clear(self.my_dump)
         self.opponent_score = self.player_score = 0
         self.passes = 0
 
@@ -395,7 +411,7 @@ class Field:
 
     def count_score(self, player):
         """ Return sum or rows scores"""
-        if player == "Human":
+        if player == "Me":
             points_sum = 0
             for i in self.rows_list[:3]:
                 points_sum += i.count_score()
@@ -442,8 +458,8 @@ class Field:
         self.draw_text(self.screen, str(len(self.op_deck.cards)), 30, 1665, 5)
         self.draw_text(self.screen, str(len(op_dump.cards)), 30, 1810, 5)
 
-        self.draw_text(self.screen, str(self.count_score("AI")), 30, 400, 305, (0, 0, 0))
-        self.draw_text(self.screen, str(self.count_score("Human")), 30, 400, 715, (0, 0, 0))
+        self.draw_text(self.screen, str(self.count_score("Op")), 30, 400, 305, (0, 0, 0))
+        self.draw_text(self.screen, str(self.count_score("Me")), 30, 400, 715, (0, 0, 0))
 
         if self.turn:
             self.draw_text(self.screen, "Ваш ход", 30, 295, 395)
@@ -462,14 +478,13 @@ class Field:
             self.panel_name = card.name
             self.panel_tags = card.tags
             self.panel_text = card.description
-            card.render(1575, 230, "M", self.screen)
-            self.draw_text(self.screen, str(card.column), 30, 1575, 830, (0, 0, 0))
-            self.draw_text(self.screen, str(card.row), 30, 1655, 830, (0, 0, 0))
-            self.draw_text(self.screen, card.status, 30, 1700, 830, (0, 0, 0))
+            card.render(1580, 230, "M", self.screen)
+            self.draw_text(self.screen, str(card.column), 30, 1580, 850, (0, 0, 0))
+            self.draw_text(self.screen, str(card.row), 30, 1610, 850, (0, 0, 0))
+            self.draw_text(self.screen, card.status, 30, 1750, 850, (0, 0, 0))
         elif type(self.panel) == Leader:
             card = self.panel
-            self.screen.blit(self.load_image('CardsPictures\\' + card.image_path, 'M'),
-                             (1575, 230, 320, 458))
+            self.screen.blit(card.image, (1580, 230, 320, 458))
             self.panel_name = card.name
             self.panel_text = card.description
             self.panel_tags = ""
@@ -507,15 +522,17 @@ class Field:
             start_x = 475 + 53 * (10 - len(hand.cards))
             a = i * 110
             if hand.cards[i].hover or hand.cards[i].status == "chosen":
-                hand.cards[i].render(start_x + a, 935, "S", self.screen)
-                hand.cards[i].rect = (start_x + a, 935, SCARD_W, SCARD_H)
+                hand.cards[i].render(start_x + a, 949, "S", self.screen)
+                hand.cards[i].rect = (start_x + a, 949, SCARD_W, SCARD_H)
                 hand.cards[i].hand_position = i
             else:
-                hand.cards[i].render(start_x + a, 945, "S", self.screen)
-                hand.cards[i].rect = (start_x + a, 945, SCARD_W, SCARD_H)
+                hand.cards[i].render(start_x + a, 954, "S", self.screen)
+                hand.cards[i].rect = (start_x + a, 954, SCARD_W, SCARD_H)
 
     def draw_rows(self):
         """ Draw all cards of all rows which are located in row during the round"""
+        arrow = None
+        hovered = None
         for i in self.rows_list:
             length = len(i.cards)
             if length % 2 == 0:
@@ -525,13 +542,61 @@ class Field:
             x, y = start_x, i.rect[1]
             for j in range(length):
                 a = j * SCARD_W
-                if i.cards[j].hover or i.cards[j].status == "chosen":
-                    i.cards[j].render(x + a, y - 10, "S", self.screen)
-                    i.cards[j].rect = (x + a, y - 10, SCARD_W, SCARD_H)
+                i.cards[j].column = j
+                if i.cards[j].status == "chosen":
+                    if i.cards[j].order:
+                        arrow = i.cards[j].rect[0:2]
+                    i.cards[j].render(x + a, y - 8, "S", self.screen)
+                    i.cards[j].rect = (x + a, y - 8, SCARD_W, SCARD_H)
+                elif i.cards[j].hover:
+                    hovered = i.cards[j]
+                    i.cards[j].render(x + a, y - 8, "S", self.screen)
+                    i.cards[j].rect = (x + a, y - 8, SCARD_W, SCARD_H)
                 else:
                     i.cards[j].render(x + a, y, "S", self.screen)
                     i.cards[j].rect = (x + a, y, SCARD_W, SCARD_H)
+                if self.pl_leader.status == "chosen extra ability":
+                    arrow = self.pl_leader.rect[0:2]
                 x += 6
+
+        if arrow:
+            if hovered:
+                self.render_arrow(arrow, hovered, True)
+            else:
+                self.render_arrow(arrow, pygame.mouse.get_pos())
+
+    def render_arrow(self, start, end, card=False):
+        card_center = start[0] + 53, start[1] + 70
+        if card:
+            if end.location.player == "Me":
+                color = (20, 20, 220, 127)
+            else:
+                color = (220, 20, 20, 127)
+            end = end.rect[0] + 53, end.rect[1] + 70
+            dx, dy = end[0] - card_center[0], end[1] - card_center[1]
+        else:
+            color = (20, 20, 220, 127)
+            dx, dy = end[0] - card_center[0], end[1] - card_center[1]
+        angle = atan2(dy, dx)
+        diag = (dy ** 2 + dx ** 2) ** 0.5 - 30
+        if diag > 200:
+            width = 10 / (diag // 100)
+        elif diag > 75:
+            width = 10 / (diag // 75)
+        else:
+            width = 10
+
+        if diag > 0:
+            pygame.draw.polygon(self.screen, color, (card_center,
+                                                     (card_center[0] + diag * cos(angle - radians(width)),
+                                                      card_center[1] + diag * sin(angle - radians(width))),
+                                                     (card_center[0] + diag * cos(angle + radians(width)),
+                                                      card_center[1] + diag * sin(angle + radians(width)))))
+            pygame.draw.polygon(self.screen, color, (end,
+                                                     (card_center[0] + diag * cos(angle - radians(width)),
+                                                      card_center[1] + diag * sin(angle - radians(width))),
+                                                     (card_center[0] + diag * cos(angle + radians(width)),
+                                                      card_center[1] + diag * sin(angle + radians(width)))))
 
     def render_game_field(self, pl_hand, op_hand, pl_dump, op_dump):
         """ All render functions are used here"""
@@ -544,7 +609,7 @@ class Field:
     def check_deck(self, deck):
         """ Render list of cards which are in deck"""
         c = 0
-        x, y = 250, 50
+        x, y = 350, 50
         self.screen.blit(self.background, (0, 0))
         for i in deck.fake_order:
             deck.cards[i].render(x + (c % 5 * 250), y + (350 * (c // 5)), "D", self.screen)
@@ -554,7 +619,7 @@ class Field:
     def check_dump(self, dump):
         """ Render list of cards which are in dump """
         c = 0
-        x, y = 250, 50
+        x, y = 350, 50
         self.screen.blit(self.background, (0, 0))
         for i in dump.cards:
             i.render(x + (c % 5 * 250), y + (350 * (c // 5)), "D", self.screen)
@@ -565,19 +630,20 @@ class Field:
         """ Render list of cards which are in hand """
         if menu_state == "pause":
             c = 0
-            x, y = 250, 250
+            x, y = 250, 150
             self.screen.blit(self.background, (0, 0))
             for i in self.chosen_storage.cards:
                 i.render(x + (c % 5 * 250), y + (350 * (c // 5)), "D", self.screen)
                 i.rect = (x + (c % 5 * 250), y + (350 * (c // 5)), LEADER_W, LEADER_H)
                 c += 1
-            self.draw_text(self.screen, "Осталось замен " + str(self.chosen_storage.mulligans), 20, 50, 50)
+            # self.draw_text(self.screen, "Осталось замен " + str(self.chosen_storage.mulligans), 20, 50, 50)
 
-    def back_to_game(self, storage):
+    def back_to_game(self, storage, mulliagn_end=False):
         """ Null cards' collisions and field chosen storage"""
         for i in storage.cards:
            i.rect = None
-        self.chosen_storage = None
+        if mulliagn_end:
+            self.chosen_storage = None
 
     def draw_end(self):
         """ Result is displayed, when game ends"""

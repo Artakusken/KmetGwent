@@ -7,6 +7,7 @@ from Field import Field, Row
 from CONSTANTS import *
 from Storages import Dump, Deck, Hand
 from Data import DECKS_LIST, CARDS_LIST, METHOD_LIST
+from Player import Player
 from Menues import Menu, Constructor, init_menu, Matchmaking, GameUI
 from PIL import Image, ImageEnhance, ImageFilter
 
@@ -16,11 +17,11 @@ size = SWIDTH, SHEIGHT
 screen = pygame.display.set_mode(size)
 running = True
 clock = pygame.time.Clock()
+player = Player()
 
 start_menu = Menu(SWIDTH, SHEIGHT)
-play_menu = Menu(SWIDTH, SHEIGHT)
-online_menu = Matchmaking(SWIDTH, SHEIGHT, screen)
-constructor = Constructor(SWIDTH, SHEIGHT, screen)
+play_menu = Matchmaking(SWIDTH, SHEIGHT, screen)
+constructor = Constructor(SWIDTH, SHEIGHT, screen, player)
 end_menu = Menu(SWIDTH, SHEIGHT)
 dd_menu = Menu(SWIDTH, SHEIGHT)
 # mulligan_menu = Menu(SWIDTH, SHEIGHT)
@@ -31,15 +32,15 @@ MENU_VAR = 0
 GAME_FONT = pygame.font.SysFont(FONT, 30, bold=True)
 PAUSE = False
 CHOSEN_OBJECT = None
-FIELD = Field(screen)
 PLAYER_HAND = Hand()
 OPPONENT_HAND = Hand()
 PLAYER_DUMP = Dump("Сброс игрока")
 OPPONENT_DUMP = Dump("Сброс ИИ")
+FIELD = Field(screen, PLAYER_DUMP, PLAYER_HAND)
 to_render = ""
 
-menu_dict = {-1: online_menu, 0: start_menu, 1: play_menu, 2: constructor, 3: "Game", 4: dd_menu, 5: mulligan_menu, 6: end_menu}
-init_menu(background, start_menu, play_menu, constructor, end_menu, dd_menu, mulligan_menu, online_menu)
+menu_dict = {0: start_menu, 1: play_menu, 2: constructor, 3: "Game", 4: dd_menu, 5: mulligan_menu, 6: end_menu}
+init_menu(background, start_menu, play_menu, constructor, end_menu, dd_menu, mulligan_menu)
 
 
 def draw_text(surf, text, text_size, x, y):
@@ -125,7 +126,7 @@ def deck_dump_hover(cards, mouse_pos, click_type):
         if card.rect[0] < x < card.rect[0] + card.rect[2] and card.rect[1] < y < card.rect[1] + card.rect[3]:
             if click_type == 3:
                 action_on_hover(card, FIELD)
-            elif click_type == 1 and MENU_VAR == 5:
+            elif click_type == 1 and isinstance(FIELD.chosen_storage, Hand):
                 card.location.mulligan(FIELD.pl_deck, card)
 
 
@@ -153,9 +154,9 @@ def action_on_click(obj, click_type, display, coordinates):
     global CHOSEN_OBJECT, PAUSE, MENU_VAR, FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP
     if type(obj) == Card and FIELD.turn:
         CHOSEN_OBJECT = obj.on_click(FIELD, click_type, coordinates, CHOSEN_OBJECT)
-    elif type(obj) == Leader and obj.fraction == "Королевства Севера" and FIELD.turn:
+    elif type(obj) == Leader and FIELD.turn:
         CHOSEN_OBJECT = obj.on_click(FIELD, click_type, CHOSEN_OBJECT)
-    elif type(obj) == Deck and click_type == 1 and obj.player == "me":
+    elif type(obj) == Deck and click_type == 1 and obj.player == "Me":
         if not PAUSE:
             pause_game()
             FIELD.chosen_storage = obj
@@ -165,7 +166,7 @@ def action_on_click(obj, click_type, display, coordinates):
             pause_game()
             FIELD.chosen_storage = obj
     elif type(obj) == Row and FIELD.turn:
-        if type(CHOSEN_OBJECT) == Card and obj.player == "Human" and len(obj.cards) < 9 and type(CHOSEN_OBJECT.location) == Hand \
+        if type(CHOSEN_OBJECT) == Card and obj.player == "Me" and len(obj.cards) < 9 and type(CHOSEN_OBJECT.location) == Hand \
                 and click_type == 1:
             PLAYER_HAND.play_card(CHOSEN_OBJECT)
             obj.add_card(CHOSEN_OBJECT, click_type, coordinates)
@@ -185,10 +186,26 @@ def set_deck(deck_name, player):
     return Deck(deck_name, player, cards)
 
 
-def set_game(enemy_frac, pl_deck_name='Мужик * на 30', op_deck_name='Мужик * на 30, x2'):
+def get_player_deck(player):
+    cards = []
+    if player.deck:
+        for i in player.deck.cards:
+            card = i.copy()
+            if i.name + ' deploy' in METHOD_LIST:
+                card.deployment = types.MethodType(METHOD_LIST[i.name + ' deploy'], card)
+            if i.name + ' order' in METHOD_LIST:
+                card.order = types.MethodType(METHOD_LIST[i.name + ' order'], card)
+            cards.append(card)
+            CLICKABLE.append(card)
+        return Deck(player.deck.name, "Me", cards)
+    return
+
+
+def set_game(enemy_frac, player, pl_deck_name='Мужик * на 30', op_deck_name='Мужик * на 30, x2'):
     """ Called when game is chosen. Forms players' decks and hands. Choose who has first game turn and set field"""
     global FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP
-    player_deck = set_deck(pl_deck_name, "me")
+    # player_deck = set_deck(pl_deck_name, "Me")
+    player_deck = get_player_deck(player)
     for i in player_deck.cards:
         i.location = player_deck
     PLAYER_HAND.start_hand(player_deck)
@@ -222,13 +239,12 @@ while running:
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element.text == "Выйти":
                     running = False
+                    player.exit()
                 if event.ui_element.text == "Выйти в меню":
                     MENU_VAR = 0
                 if event.ui_element.text == "Играть":
                     MENU_VAR = 1
-                if event.ui_element.text == "Найти противника":
-                    MENU_VAR = -1
-                    menu_dict[MENU_VAR].init_enemies()
+                    play_menu.init_enemies()
                 if event.ui_element.text == "Конструктор колоды":
                     MENU_VAR = 2
                 if event.ui_element.text == "Переименовать колоду":
@@ -237,15 +253,16 @@ while running:
                 if event.ui_element.text == "Битва с Северянами":
                     end_game()
                     MENU_VAR = 3
-                    set_game("NR")
+                    set_game("NR", player)
                 if event.ui_element.text == "Битва с длинноухими":
                     end_game()
                     MENU_VAR = 3
-                    set_game("Scoia")
+                    set_game("Scoia", player)
             if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.text in constructor.cards.keys():
                 constructor.chosen_card = event.text
             if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED and event.text in constructor.decks.keys():
                 constructor.current_deck = constructor.decks[event.text]
+                player.deck = constructor.current_deck
             if MENU_VAR < 3:
                 menu_dict[MENU_VAR].manager.process_events(event)
                 menu_dict[MENU_VAR].manager.update(time_delta)
@@ -258,8 +275,10 @@ while running:
             constructor.display_deck()
             constructor.display_info()
             constructor.display_card()
-        if MENU_VAR == -1:
-            online_menu.show_enemies()
+        if MENU_VAR == 1:
+            play_menu.show_enemies()
+        if MENU_VAR < 2:
+            screen.blit(GAME_FONT.render(f"Выбранная колода: {player.deck.name}", True, (200, 200, 200)), (520, 870))
         pygame.display.update()
     elif MENU_VAR == 3 or MENU_VAR == 4 or MENU_VAR == 5:
         if not PAUSE:
@@ -269,7 +288,7 @@ while running:
             to_render = f"{a, pygame.mouse.get_pos()}"
             FIELD.draw_rows()
             text_surface = GAME_FONT.render(to_render, True, (200, 200, 200))
-            screen.blit(text_surface, (250, 900))
+            # screen.blit(text_surface, (250, 900))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     MENU_VAR = 0
@@ -317,18 +336,31 @@ while running:
                         if mulligan_menu.state == "pause" and mulligan_menu.buttons_group["pause"][1][1].hover_point(pos[0], pos[1]):
                             PAUSE = False
                             MENU_VAR = 3
-                            FIELD.back_to_game(FIELD.chosen_storage)
+                            FIELD.back_to_game(FIELD.chosen_storage, True)
+                            PLAYER_HAND.end_mulligan(FIELD.pl_deck)
                             FIELD.set_panel_card(None)
                             break
                         elif mulligan_menu.state == "pause" and mulligan_menu.buttons_group["pause"][1][0].hover_point(pos[0], pos[1]):
-                            FIELD.back_to_game(FIELD.chosen_storage)
+                            FIELD.back_to_game(FIELD.chosen_storage, True)
                             FIELD.set_panel_card(None)
                             mulligan_menu.state = "game"
                         elif mulligan_menu.state == "game" and mulligan_menu.buttons_group["game"][1][0].hover_point(pos[0], pos[1]):
                             mulligan_menu.state = "pause"
                             FIELD.chosen_storage = PLAYER_HAND
                             pause_game()
-
+                        elif mulligan_menu.state == "pause" and mulligan_menu.buttons_group["pause"][1][2].hover_point(pos[0], pos[1]):
+                            FIELD.chosen_storage = FIELD.pl_deck
+                            FIELD.set_panel_card(None)
+                            FIELD.chosen_storage.random_order()
+                            FIELD.check_deck(FIELD.chosen_storage)
+                        elif mulligan_menu.state == "pause" and mulligan_menu.buttons_group["pause"][1][3].hover_point(pos[0], pos[1]):
+                            FIELD.chosen_storage = PLAYER_DUMP
+                            FIELD.set_panel_card(None)
+                            FIELD.check_dump(FIELD.chosen_storage)
+                        elif mulligan_menu.state == "pause" and mulligan_menu.buttons_group["pause"][1][4].hover_point(pos[0], pos[1]):
+                            FIELD.chosen_storage = PLAYER_HAND
+                            FIELD.set_panel_card(None)
+                            FIELD.mulligan_hand(mulligan_menu.state)
                     if FIELD.chosen_storage:
                         deck_dump_hover(FIELD.chosen_storage.cards, pos, 1)
                 if MENU_VAR == 4:
@@ -340,6 +372,7 @@ while running:
                 dd_menu.manager.draw_ui(screen)
             elif MENU_VAR == 5:
                 mulligan_menu.buttons_group[mulligan_menu.state][0].draw_ui(screen)
+                FIELD.draw_text(screen, "Осталось замен " + str(PLAYER_HAND.mulligans), 20, 165, 35)
             pygame.display.update()
     elif MENU_VAR == 6:
         for event in pygame.event.get():

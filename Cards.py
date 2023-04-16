@@ -1,6 +1,5 @@
 from CONSTANTS import *
 from Cards_Descriptions import descriptions
-
 pygame.init()
 
 
@@ -10,7 +9,7 @@ class Card:
     It can have many various positions. Card's points value is thing that defines player score in a round.
     """
 
-    def __init__(self, name, base_power, image_name, armor, provision, card_type, fraction, *tags):
+    def __init__(self, name, base_power, image_name, armor, provision, card_type, fraction, d=None, o=None, e=None, c=None, *tags):
 
         if fraction == "NR":
             self.fraction = "Королевства Севера"
@@ -19,9 +18,9 @@ class Card:
         else:
             self.fraction = fraction
 
-        if type(tags) is tuple:
+        if isinstance(tags, tuple) or isinstance(tags, list):
             self.tags = ' '.join(tags)
-        elif type(tags) is str:
+        elif isinstance(tags, str):
             self.tags = tags
         else:
             self.tags = None
@@ -39,6 +38,10 @@ class Card:
         self.row = None
         self.column = None
         self.field_position = [self.row, self.column]
+        self.turns_in_hand = 0
+        self.turns_in_deck = 0
+        self.turns_on_field = 0
+        self.turns_in_dump = 0
         self.location = None
         self.status = "passive"
         self.hand_position = None
@@ -47,12 +50,15 @@ class Card:
 
         self.description = self.form_text()
 
-        self.frame = self.load_card_image("Field\\cardFrame.png", "O")
-        self.Mimage = self.load_card_image('CardsPictures\\' + 'M' + image_name, 'O')
-        self.MSimage = self.load_card_image('CardsPictures\\' + 'MS' + image_name, 'O')
-        self.Simage = self.load_card_image('CardsPictures\\' + 'S' + image_name, 'O')
+        self.frame = self.load_card_image("Field\\cframe.png", "O")
+        self.Mimage = self.load_card_image(f'CardsPictures\\{self.fraction}\\' + 'M' + image_name, 'O')
+        self.MSimage = self.load_card_image(f'CardsPictures\\{self.fraction}\\' + 'MS' + image_name, 'O')
+        self.Simage = self.load_card_image(f'CardsPictures\\{self.fraction}\\' + 'S' + image_name, 'O')
 
-        self.deployment = None
+        self.deployment = d
+        self.order = o
+        self.turn_end = e
+        self.conditional = c
 
     def load_card_image(self, name, size):
         """ Load images from files into game. Size O - original, M - medium, K - square(150x150), S - small"""
@@ -109,14 +115,15 @@ class Card:
             font_color = (200, 50, 50)
         if ptype == "p":
             points = font.render(str(self.power), True, font_color)
+            # screen.blit(font.render(str(self.turns_on_field), True, font_color), (x + dx // 2, y + 90))
             if self.power > 9:
                 screen.blit(points, (x + text_coord_delta, y + text_coord_delta))
             else:
                 screen.blit(points, (x + text_coord_delta + 6, y + text_coord_delta))
         else:
             armor = font.render(str(self.armor), True, (0, 0, 0))
-            if self.power > 9:
-                screen.blit(armor, (x + dx + text_coord_delta, y + text_coord_delta))
+            if self.armor > 9:
+                screen.blit(armor, (x + dx + text_coord_delta - 6, y + text_coord_delta))
             else:
                 screen.blit(armor, (x + dx + text_coord_delta, y + text_coord_delta))
 
@@ -167,6 +174,7 @@ class Card:
                 if game_object is None:
                     if self.status == "passive":
                         self.status = "chosen"
+                        self.activate_order(card=self, field=game_field, row=self.location)
                         return self
                     else:
                         self.status = "passive"
@@ -183,6 +191,17 @@ class Card:
                     self.location.add_card(game_object, 1, coord)
                     game_object.deploy(card=game_object, field=game_object, row=self.location)
                     return None
+                elif isinstance(game_object, Leader) and game_object.status == "chosen extra ability" and game_object.rability > 0:
+                    if game_object.card_to_move1 is self:
+                        self.status = "passive"
+                        game_object.card_to_move1 = None
+                    else:
+                        if game_object.card_to_move1 is None:
+                            game_object.card_to_move1 = self
+                            self.status = "chosen"
+                        elif game_object.card_to_move2 is None:
+                            game_object.card_to_move2 = self
+                            game_object.extra_ability()
                 return game_object
         else:
             if game_object is self:
@@ -195,7 +214,24 @@ class Card:
 
     def deploy(self, card=None, field=None, row=None):
         """ Action that card does, when deployed on the field (row)"""
-        self.deployment(field, row)
+        if self.deployment:
+            self.deployment(field, row)
+
+    def activate_order(self, card=None, field=None, row=None):
+        if self.turns_on_field > 0 and self.order:
+            self.order(field, row)
+            self.order = None
+
+    def new_turn(self):
+        loc = self.location
+        if loc.str_type == "Hand":
+            self.turns_in_hand += 1
+        elif loc.str_type == "Deck":
+            self.turns_in_deck += 1
+        elif loc.str_type == "Row":
+            self.turns_on_field += 1
+        elif loc.str_type == "Dump":
+            self.turns_in_dump += 1
 
     def kill(self, op_dump, pl_dump, pl_hand, op_hand):
         """ Move card with 0 points to dump"""
@@ -211,7 +247,7 @@ class Card:
 
     def copy(self):
         """ Return Card class with same args"""
-        return Card(self.name, self.bp, self.image_path, self.armor, self.provision, self.card_type, self.fraction, self.tags)
+        return Card(self.name, self.bp, self.image_path, self.armor, self.provision, self.card_type, self.fraction, self.deployment, self.order, self.turn_end, self.conditional, self.tags)
 
 
 class Leader(pygame.sprite.Sprite):
@@ -235,10 +271,13 @@ class Leader(pygame.sprite.Sprite):
             self.fraction = fraction
 
         self.rect = pygame.Rect(x, y, LEADER_W, LEADER_H)
-        self.image_path = name + '.png'
+        # self.image_path = name + '.png'
+        self.image = self.load_image("CardsPictures\\Лидеры\\" + self.name + ".png")
         self.load_image(animation, True)
         self.description = self.form_text()
         self.rability = 3
+        self.card_to_move1 = None
+        self.card_to_move2 = None
         self.mability = 1
         self.status = "passive"
         self.frame = self.load_image('Field\\BigCardFrame.png')
@@ -278,18 +317,32 @@ class Leader(pygame.sprite.Sprite):
         else:
             return ["EMPTY DESCRIPTION"]
 
+    def extra_ability(self):
+        card1_row = self.card_to_move1.location
+        if card1_row == self.card_to_move2.location:
+            card1_row.cards.insert(self.card_to_move2.column, card1_row.cards.pop(self.card_to_move1.column))
+
+        self.card_to_move1.status = "passive"
+        self.card_to_move1 = None
+        self.card_to_move2 = None
+        self.rability -= 1
+
     def update(self):
         """ Pick next frame from frames and set is as current frame"""
         self.cur_frame = (self.cur_frame + 1) % self.frames_number
 
     def on_click(self, game_field, click_type, game_object):
         """ Manage arguments and choose what actions to do"""
-        if self.status == "passive" and click_type == 1:
+        if self.status == "passive" and click_type == 1 and self.rability > 0:
             self.status = "chosen extra ability"
             if type(game_object) == Card or type(game_object) == Leader:
                 game_object.status = 'passive'
             return self
         elif self.status == "chosen extra ability" and click_type == 1:
+            if any([self.card_to_move1, self.card_to_move2]):
+                self.card_to_move1.status = "passive"
+                self.card_to_move1 = None
+                self.card_to_move2 = None
             self.status = "passive"
             return None
         if self.status == "passive" and click_type == 2:
