@@ -9,22 +9,15 @@ class Card:
     It can have many various positions. Card's points value is thing that defines player score in a round.
     """
 
-    def __init__(self, name, base_power, image_name, armor, provision, card_type, fraction, d=None, o=None, e=None, c=None, *tags):
-
+    def __init__(self, name, base_power, image_name, armor, provision, card_type, fraction, tags, d=None, o=None, e=None, c=None):
+        # fraction set
         if fraction == "NR":
             self.fraction = "Королевства Севера"
         elif fraction == "NG":
             self.fraction = "Нильфгаард"
         else:
             self.fraction = fraction
-
-        if isinstance(tags, tuple) or isinstance(tags, list):
-            self.tags = ' '.join(tags)
-        elif isinstance(tags, str):
-            self.tags = tags
-        else:
-            self.tags = None
-
+        # get cards parameters and set fonts
         self.name = name
         self.bp = base_power
         self.power = self.bp
@@ -32,9 +25,10 @@ class Card:
         self.image_path = image_name
         self.provision = provision
         self.card_type = card_type
+        self.tags = tags
         self.font24 = pygame.font.Font(None, 24)
         self.font40 = pygame.font.Font(None, 40)
-
+        # initial game parameters
         self.row = None
         self.column = None
         self.field_position = [self.row, self.column]
@@ -47,14 +41,13 @@ class Card:
         self.hand_position = None
         self.rect = None
         self.hover = False
-
+        # get description text (from py-file) and images (from pictures folder)
         self.description = self.form_text()
-
         self.frame = self.load_card_image("Field\\cframe.png", "O")
         self.Mimage = self.load_card_image(f'CardsPictures\\{self.fraction}\\' + 'M' + image_name, 'O')
         self.MSimage = self.load_card_image(f'CardsPictures\\{self.fraction}\\' + 'MS' + image_name, 'O')
         self.Simage = self.load_card_image(f'CardsPictures\\{self.fraction}\\' + 'S' + image_name, 'O')
-
+        # cards abilities
         self.deployment = d
         self.order = o
         self.turn_end = e
@@ -173,9 +166,7 @@ class Card:
             if self.location.str_type == "Row":
                 if game_object is None:
                     if self.status == "passive":
-                        self.status = "chosen"
-                        self.activate_order(card=self, field=game_field, row=self.location)
-                        return self
+                        return self.activate_order(card=self, field=game_field, row=self.location)
                     else:
                         self.status = "passive"
                         return None
@@ -189,7 +180,7 @@ class Card:
                         for i in game_object.location.cards[game_object.hand_position::]:
                             i.hand_position -= 1
                     self.location.add_card(game_object, 1, coord)
-                    game_object.deploy(card=game_object, field=game_object, row=self.location)
+                    game_object.deploy(card=game_object, field=game_field, row=self.location)
                     return None
                 elif isinstance(game_object, Leader) and game_object.status == "chosen extra ability" and game_object.rability > 0:
                     if game_object.card_to_move1 is self:
@@ -215,12 +206,15 @@ class Card:
     def deploy(self, card=None, field=None, row=None):
         """ Action that card does, when deployed on the field (row)"""
         if self.deployment:
-            self.deployment(field, row)
+            self.deployment(self, field, row)
 
     def activate_order(self, card=None, field=None, row=None):
         if self.turns_on_field > 0 and self.order:
-            self.order(field, row)
+            self.order(self, field, row)
             self.order = None
+            return None
+        self.status = "chosen"
+        return self
 
     def new_turn(self):
         loc = self.location
@@ -232,6 +226,12 @@ class Card:
             self.turns_on_field += 1
         elif loc.str_type == "Dump":
             self.turns_in_dump += 1
+
+        if self.conditional:
+            self.conditional(self, self.location.field, self.location)
+
+        if self.turn_end:
+            self.turn_end(self, self.location.field, self.location)
 
     def kill(self, op_dump, pl_dump, pl_hand, op_hand):
         """ Move card with 0 points to dump"""
@@ -247,7 +247,7 @@ class Card:
 
     def copy(self):
         """ Return Card class with same args"""
-        return Card(self.name, self.bp, self.image_path, self.armor, self.provision, self.card_type, self.fraction, self.deployment, self.order, self.turn_end, self.conditional, self.tags)
+        return Card(self.name, self.bp, self.image_path, self.armor, self.provision, self.card_type, self.fraction, self.tags, self.deployment, self.order, self.turn_end, self.conditional)
 
 
 class Leader(pygame.sprite.Sprite):
