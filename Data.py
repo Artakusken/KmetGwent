@@ -1,18 +1,10 @@
 from Cards import Card
 from Storages import Deck
+from Cards_Abilities import METHODS
 
 import sqlalchemy
 import sqlalchemy_serializer
 import sqlalchemy.orm as orm
-import sqlite3
-
-
-def chk_conn(connection):
-    try:
-        connection.cursor()
-        return True
-    except Exception:
-        return False
 
 
 def cant_stand_brothers(card, field, row):
@@ -30,36 +22,22 @@ def healing_armor(card, field, row):
     card.armor = 0
 
 
-SqlAlchemyBase = orm.declarative_base()
+def recruit(card, field, row):
+    if card.turns_on_field >= 4:
+        card.power += 4
+
+
+base_engines = {"cards": sqlalchemy.create_engine('sqlite:///NC.db?check_same_thread=False'),
+                "decks": sqlalchemy.create_engine('sqlite:///ND.db?check_same_thread=False')}
+
+
+CardsBase = orm.declarative_base()
+DecksBase = orm.declarative_base()
 __factory = None
 
 
-def global_init(db_file):
-    global __factory
-
-    if __factory:
-        return
-
-    if not db_file or not db_file.strip():
-        raise Exception("Необходимо указать файл базы данных.")
-
-    conn_str = f'sqlite:///{db_file.strip()}?check_same_thread=False'
-    # print(f"Подключение к базе данных по адресу {conn_str}")
-
-    engine = sqlalchemy.create_engine(conn_str, echo=False)
-    __factory = orm.sessionmaker(bind=engine)
-
-    SqlAlchemyBase.metadata.create_all(engine)
-
-
-def create_session() -> orm.Session:
-    global __factory
-    return __factory()
-
-
-class CardsBase(SqlAlchemyBase, sqlalchemy_serializer.SerializerMixin):
+class CardsParams(CardsBase, sqlalchemy_serializer.SerializerMixin):
     __tablename__ = "Cards"
-
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
     name = sqlalchemy.Column(sqlalchemy.String, unique=True, nullable=False)
     bp = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
@@ -73,100 +51,185 @@ class CardsBase(SqlAlchemyBase, sqlalchemy_serializer.SerializerMixin):
     turn_end = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("Methods.id"))
     conditional = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("Methods.id"))
 
+    def __init__(self, name, bp, armor, provision, card_type, fraction, deployment, order, turn_end, conditional, *tags):
+        self.name = name
+        self.bp = bp
+        self.armor = armor
+        self.provision = provision
+        self.card_type = card_type
+        self.fraction = fraction
+        self.tags = ";".join([i for i in tags])
+        self.deployment = deployment
+        self.order = order
+        self.turn_end = turn_end
+        self.conditional = conditional
 
-class Methods(SqlAlchemyBase, sqlalchemy_serializer.SerializerMixin):
+
+class Methods(CardsBase, sqlalchemy_serializer.SerializerMixin):
     __tablename__ = "Methods"
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
     type = sqlalchemy.Column(sqlalchemy.Integer)
     name = sqlalchemy.Column(sqlalchemy.String, unique=True, nullable=False)
 
+    def __init__(self, def_name, type):
+        self.name = def_name
+        self.type = type
 
-class MethodsType(SqlAlchemyBase, sqlalchemy_serializer.SerializerMixin):
+
+class MethodsType(CardsBase, sqlalchemy_serializer.SerializerMixin):
     __tablename__ = "Methods_types"
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
     name = sqlalchemy.Column(sqlalchemy.String)
 
 
-# class DecksBase(SqlAlchemyBase, sqlalchemy_serializer.SerializerMixin):
-#     __tablename__ = "Decks"
-#
-#     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
-#     name = sqlalchemy.Column(sqlalchemy.String, unique=True, nullable=False)
-#     cards = sqlalchemy.Column(sqlalchemy.String)
-#     last_chosen = sqlalchemy.Column(sqlalchemy.Integer)
+class Decks(DecksBase, sqlalchemy_serializer.SerializerMixin):
+    __tablename__ = "Decks"
+
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
+    name = sqlalchemy.Column(sqlalchemy.String, unique=True, nullable=False)
+    cards = sqlalchemy.Column(sqlalchemy.String)
+    last_chosen = sqlalchemy.Column(sqlalchemy.Integer)
+
+    def __init__(self, name, cards):
+        self.name = name
+        self.cards = cards
+        self.last_chosen = 0
 
 
-CARDS_LIST = {"Нет карты": None}
-CARDS_LIST["Воин клана Турсеах"] = Card("Воин клана Турсеах", 10, "Воин клана Турсеах.png", 2, 5, "U", "NR", None, None, None, None, "Воин", "Поддержка")
-CARDS_LIST["Пикинёры Ард Феаин"] = Card("Пикинёры Ард Феаин", 10, "Пикинёры Ард Феаин.png", 10, 6, "U", "NG", "Солдаты", "Поддержка")
-CARDS_LIST["Аpбалетчики 'Импера'"] = Card("Аpбалетчики 'Импера'", 6, "Аpбалетчики 'Импера'.png", 2, 6, "U", "NG", "Солдаты", "Поддержка")
-CARDS_LIST["Бригада 'Импера'"] = Card("Бригада 'Импера'", 4, "Бригада 'Импера'.png", 6, 5, "U", "NG", "Солдаты", "Поддержка")
-CARDS_LIST["Новобранец"] = Card("Новобранец", 4, "Новобранец.png", 1, 4, "U", "NG", "Солдаты", "Поддержка")
-CARDS_LIST["Пикинёры 'Альба'"] = Card("Пикинёры 'Альба'", 6, "Пикинёры 'Альба'.png", 2, 4, "U", "NG", "Солдаты", "Поддержка")
-CARDS_LIST["Рыцарь Нильфгаарда"] = Card("Рыцарь Нильфгаарда", 8, "Рыцарь Нильфгаарда.png", 12, 6, "U", "NG", "Рыцарь", "Поддержка")
-CARDS_LIST["Бригада Даэрляндцев"] = Card("Бригада Даэрляндцев", 8, "Бригада Даэрляндцев.png", 12, 6, "U", "NG", "Рыцарь", "Поддержка")
-CARDS_LIST["Дивизия Магна"] = Card("Дивизия Магна", 8, "Дивизия Магна.png", 12, 6, "U", "NG", "Рыцарь", "Поддержка")
-CARDS_LIST["Кавалерия Наузикка"] = Card("Кавалерия Наузикка", 8, "Кавалерия Наузикка.png", 12, 6, "U", "NG", "Рыцарь", "Поддержка")
-CARDS_LIST["Кирасиры 'Ард Феаин'"] = Card("Кирасиры 'Ард Феаин'", 8, "Кирасиры 'Ард Феаин'.png", 12, 6, "U", "NG", "Рыцарь", "Поддержка")
-CARDS_LIST["Тяжёлая Хельга"] = Card("Тяжёлая Хельга", 8, "Тяжёлая Хельга.png", 12, 6, "U", "NG", "Рыцарь", "Поддержка")
+def create_bases():
+    CardsBase.metadata.create_all(base_engines["cards"])
+    DecksBase.metadata.create_all(base_engines["decks"])
 
-METHOD_LIST = {"Воин клана Турсеах deploy": cant_stand_brothers}
-METHOD_LIST["Воин клана Турсеах order"] = healing_armor
 
-DECKS_LIST = dict()
+def global_init(db_file):
+    global __factory
 
-con = sqlite3.connect("Decks.db")
-if chk_conn(con):
-    cur = con.cursor()
-    decks = cur.execute("""SELECT * FROM Decks""").fetchall()
-    for deck in decks:
-        if deck[2]:
-            cards = []
-            for i in deck[2].split(";"):
-                card = CARDS_LIST[i].copy()
-                cards.append(card)
-            DECKS_LIST[deck[1]] = Deck(deck[1], "Me", cards)
+    if __factory:
+        return
+
+    if not db_file or not db_file.strip():
+        raise Exception("Необходимо указать файл базы данных.")
+
+    engine = base_engines[db_file]
+    # __factory = orm.sessionmaker(bind=engine)
+    __factory = orm.sessionmaker(binds={CardsBase: base_engines["cards"], DecksBase: base_engines["decks"]})
+
+    create_bases()
+
+
+def create_session() -> orm.Session:
+    global __factory
+    return __factory()
+
+
+def choose_deck(name):
+    global_init("decks")
+    session = create_session()
+    if session.query(Decks).filter(name == Decks.name).first():
+        deck = session.query(Decks).filter(name == Decks.name).first().cards
+        session.commit()
+        return [int(card_id) for card_id in deck.split(";")]
+
+def get_decks(player):
+    global_init("cards")
+    global_init("decks")
+    session = create_session()
+    all_deca = []
+    for decks_name in session.query(Decks).all():
+        deca = []
+        for card_id in choose_deck(decks_name.name):
+            params = session.query(CardsParams).filter(CardsParams.id == card_id).first()
+            name = params.name
+            bp = params.bp
+            armor = params.armor
+            provision = params.provision
+            card_type = params.card_type
+            fraction = params.fraction
+            tags = params.tags.split(";")
+            if session.query(Methods).filter(Methods.id == params.deployment).first():
+                deployment = METHODS[session.query(Methods).filter(Methods.id == params.deployment).first().name]
+            else:
+                deployment = None
+            if session.query(Methods).filter(Methods.id == params.order).first():
+                order = METHODS[session.query(Methods).filter(Methods.id == params.order).first().name]
+            else:
+                order = None
+            if session.query(Methods).filter(Methods.id == params.turn_end).first():
+                turn_end = METHODS[session.query(Methods).filter(Methods.id == params.turn_end).first().name]
+            else:
+                turn_end = None
+            if session.query(Methods).filter(Methods.id == params.conditional).first():
+                conditional = METHODS[session.query(Methods).filter(Methods.id == params.conditional).first().name]
+            else:
+                conditional = None
+
+            deca.append(
+                Card(name, bp, name + ".png", armor, provision, card_type, fraction, tags, deployment, order, turn_end, conditional))
+        all_deca.append(Deck(decks_name.name, "Me", deca, decks_name.last_chosen, decks_name.id))
+    session.commit()
+    return all_deca
+
+
+def create_deck(deck_cards, deck):
+    deca = []
+    for params in deck_cards:
+        name = params[0]
+        bp = params[1]
+        armor = params[2]
+        provision = params[3]
+        card_type = params[4]
+        fraction = params[5]
+        if params[6]:
+            deployment = METHODS[params[6]]
         else:
-            DECKS_LIST[deck[1]] = Deck(deck[1], "Me", deck[2].split(";"))
+            deployment = None
+        if params[7]:
+            order = METHODS[params[7]]
+        else:
+            order = None
+        if params[8]:
+            turn_end = METHODS[params[8]]
+        else:
+            turn_end = None
+        if params[9]:
+            conditional = METHODS[params[9]]
+        else:
+            conditional = None
+        tags = params[10].split(";")
+        deca.append(Card(name, bp, name + ".png", armor, provision, card_type, fraction, tags, deployment, order, turn_end, conditional))
+    return Deck(deck.name, "Me", deca, deck.last_chosen, deck.id)
 
-methods = {"cant_stand_brothers": cant_stand_brothers}
-methods["healing_armor"] = healing_armor
 
-# if __name__ == "__main__":
-global_init("NCards.db")
-deck = "1;2;1;2;1;2;1;2;2;2;2;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1"
-session = create_session()
-for i in session.query(CardsBase):
-    if session.query(Methods).filter(Methods.id == i.deployment).first():
-        print(session.query(Methods).filter(Methods.id == i.deployment).first().name)
-    else:
-        print(None)
-
-dec = []
-for card_id in deck.split(";"):
-    params = session.query(CardsBase).filter(CardsBase.id == card_id).first()
-    name = params.name
-    bp = params.bp
-    armor = params.armor
-    provision = params.provision
-    card_type = params.card_type
-    fraction = params.fraction
-    tags = params.tags
-    deploy = session.query(Methods).filter(Methods.id == params.deployment).first()
-    if deploy:
-        deployment = methods[deploy.name]
+def create_card(params):
+    name = params[0]
+    bp = params[1]
+    armor = params[2]
+    provision = params[3]
+    card_type = params[4]
+    fraction = params[5]
+    if params[6]:
+        deployment = METHODS[params[6]]
     else:
         deployment = None
-    ord = session.query(Methods).filter(Methods.id == params.order).first()
-    if ord:
-        order = methods[session.query(Methods).filter(Methods.id == params.order).first().name]
+    if params[7]:
+        order = METHODS[params[7]]
     else:
         order = None
-    turn_end = params.turn_end
-    conditional = params.conditional
-    dec.append(
-        Card(name, bp, name + ".png", armor, provision, card_type, fraction, deployment, order, turn_end, conditional, tags))
-game_deck = Deck("new", "Me", dec)
-session.commit()
+    if params[8]:
+        turn_end = METHODS[params[8]]
+    else:
+        turn_end = None
+    if params[9]:
+        conditional = METHODS[params[9]]
+    else:
+        conditional = None
+    tags = params[10].split(";")
+    return Card(name, bp, name + ".png", armor, provision, card_type, fraction, tags, deployment, order, turn_end, conditional)
+
+def update_deck_name(player, new_name):
+    global_init("decks")
+    session = create_session()
+    session.query(Decks).get(player.deck.id).name = new_name
+    session.commit()

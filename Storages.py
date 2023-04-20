@@ -1,15 +1,4 @@
-from CONSTANTS import *
 import random
-import sqlite3
-
-
-def chk_conn(con):
-    try:
-        con.cursor()
-        return True
-    except Exception:
-        return False
-
 
 class Hand:
     """
@@ -112,12 +101,14 @@ class Deck:
     These cards are seen only for a player, their points don't affect on score and player don't know their order.
     """
 
-    def __init__(self, name, player, cards):
+    def __init__(self, name, player, cards, last_time, id=None):
         self.cards = self.set_cards(cards)
         self.name = name
         self.player = player
         self.fake_order = []
         self.str_type = "Deck"
+        self.last_chosen = last_time
+        self.id = id
         if len(self.cards) > 1:
             if self.player == "Me":
                 self.rect = (1630, 935, 105, 150)
@@ -146,18 +137,6 @@ class Deck:
         """ Move card from deck to dump (undone) """
         index = chosen_card
         dump.cards.append(self.cards.pop(index))
-
-    def update_name(self, new_name):
-        """ Set a new name for the chosen deck """
-        con = sqlite3.connect("Decks.db")
-        if chk_conn(con):
-            cur = con.cursor()
-            cur.execute('''UPDATE Decks
-                                   SET Name = ?
-                                   WHERE Name = ? ''', (new_name, self.name))
-            con.commit()
-            self.name = new_name
-            con.close()
 
 
 class Dump:

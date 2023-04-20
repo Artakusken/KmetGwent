@@ -1,9 +1,6 @@
 import pygame.image
 import pygame_gui
 from CONSTANTS import *
-# from Data import DECKS_LIST, CARDS_LIST
-from Data import CARDS_LIST
-from Player import Player
 from Storages import Deck
 from Cards_Descriptions import descriptions
 
@@ -93,14 +90,14 @@ class Constructor(Menu):
                                                                manager=self.manager,
                                                                initial_text="Введите индекс карты для удаления")
         self.decks = player.decks
-        self.cards = CARDS_LIST
+        self.cards = {"Нет карты": None}
         self.chosen_card = None
         self.decks_drop_box = pygame_gui.elements.UIDropDownMenu(self.decks.keys(), manager=self.manager,
                                                                  relative_rect=pygame.Rect((480, 20), (250, 75)),
-                                                                 starting_option=list(self.decks.keys())[0])
-        self.cards_drop_box = pygame_gui.elements.UIDropDownMenu(self.cards.keys(), manager=self.manager,
-                                                                 relative_rect=pygame.Rect((740, 20), (250, 75)),
-                                                                 starting_option=list(self.cards.keys())[0])
+                                                                 starting_option=player.deck.name)
+        # self.cards_drop_box = pygame_gui.elements.UIDropDownMenu(self.cards.keys(), manager=self.manager,
+        #                                                          relative_rect=pygame.Rect((740, 20), (250, 75)),
+        #                                                          starting_option=list(self.cards.keys())[0])
         self.max_provision = 150
         self.provision = 0
 
@@ -109,10 +106,14 @@ class Constructor(Menu):
         self.deck_background.fill((15, 15, 15))
         self.card_background.fill((15, 15, 15))
 
-        self.current_deck = None
+        self.current_deck = player.deck
         self.screen = screen
         self.player = player
 
+    def full_box(self):
+        self.cards_drop_box = pygame_gui.elements.UIDropDownMenu(self.cards.keys(), manager=self.manager,
+                                                                 relative_rect=pygame.Rect((740, 20), (250, 75)),
+                                                                 starting_option=list(self.cards.keys())[0])
     def display_deck(self):
         """ Render a column of chosen deck's cards (name, power and provision)"""
         if type(self.current_deck) == Deck:
@@ -125,7 +126,7 @@ class Constructor(Menu):
         """ Render text to inform player what is what"""
         if self.current_deck:
             if len(self.current_deck.cards) > 1:
-                self.provision = sum([CARDS_LIST[i.name].provision for i in self.current_deck.cards])
+                self.provision = sum([self.cards[i.name].provision for i in self.current_deck.cards])
             else:
                 self.provision = 0
         if self.provision <= self.max_provision:
@@ -142,23 +143,25 @@ class Constructor(Menu):
             lines = self.cards[self.chosen_card].description
             self.screen.blit(image, (980, 120, 572, 820))
             self.draw_text(self.screen, self.cards[self.chosen_card].name, 25, 1560, 160)
-            self.draw_text(self.screen, self.cards[self.chosen_card].tags, 25, 1560, 200)
+            self.draw_text(self.screen, ", ".join(self.cards[self.chosen_card].tags), 25, 1560, 200)
             for i in range(len(lines)):
                 a = i * 25
                 self.draw_text(self.screen, lines[i], 20, 1560, 250 + a)
 
     def rename_deck(self, new_name):
         """ Update DECK list with new name and rename deck itself"""
+        from Data import update_deck_name
         if type(self.current_deck) == Deck:
             self.player.decks[new_name] = self.player.decks.pop(self.current_deck.name)
-            self.current_deck.update_name(new_name)
+            update_deck_name(self.player, new_name)
+            self.current_deck.name = new_name
 
     def update_decks_box(self):
         """ Reset decks' drop box"""
         self.decks_drop_box.kill()
         self.decks_drop_box = pygame_gui.elements.UIDropDownMenu(self.decks.keys(), manager=self.manager,
                                                                  relative_rect=pygame.Rect((490, 20), (250, 75)),
-                                                                 starting_option=list(self.decks.keys())[0])
+                                                                 starting_option=self.player.deck.name)
 
     def new_deck(self):
         pass

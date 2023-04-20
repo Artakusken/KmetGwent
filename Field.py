@@ -243,6 +243,7 @@ class Field:
     """
 
     def __init__(self, screen, player_dump, player_hand):
+        # get images
         self.field_image = self.load_image('Field\\Field.jpg', "O")
         self.background = None
         self.rcoin = self.load_image('Field\\RCoin.png', 'K')
@@ -250,7 +251,7 @@ class Field:
         self.dump_image = self.load_image('Field\\Dump.png', 'S')
         self.pl_deck_image = self.load_image('Field\\Nilfgaard.png', 'S')
         self.exit = self.load_image('Field\\exit.png', 'O')
-
+        # set initial values
         self.round = 0
         self.player_score = 0
         self.opponent_score = 0
@@ -259,7 +260,7 @@ class Field:
         self.passes = 0
         self.op_crowns = {0: "Red0Crown", 1: "Red1Crown", 2: "Red2Crown"}
         self.pl_crowns = {0: "Blue0Crown", 1: "Blue1Crown", 2: "Blue2Crown"}
-
+        # set field objects
         self.pl_mr = Row("melee", "Me", self)  # player melee row
         self.pl_rr = Row("ranged", "Me", self)  # player range row
         self.pl_sr = Row("siege", "Me", self)  # player siege row
@@ -476,7 +477,8 @@ class Field:
         if type(self.panel) == Card:
             card = self.panel
             self.panel_name = card.name
-            self.panel_tags = card.tags
+            if card.tags:
+                self.panel_tags = ", ".join(card.tags)
             self.panel_text = card.description
             card.render(1580, 230, "M", self.screen)
             self.draw_text(self.screen, str(card.column), 30, 1580, 850, (0, 0, 0))
@@ -636,7 +638,6 @@ class Field:
                 i.render(x + (c % 5 * 250), y + (350 * (c // 5)), "D", self.screen)
                 i.rect = (x + (c % 5 * 250), y + (350 * (c // 5)), LEADER_W, LEADER_H)
                 c += 1
-            # self.draw_text(self.screen, "Осталось замен " + str(self.chosen_storage.mulligans), 20, 50, 50)
 
     def back_to_game(self, storage, mulliagn_end=False):
         """ Null cards' collisions and field chosen storage"""
