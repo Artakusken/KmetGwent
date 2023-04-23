@@ -10,14 +10,19 @@ class Player:
         self.ip = gethostbyname(gethostname())
         self.decks = None
         self.import_decks()
-        self.import_cards()
 
     def decks_base_session(self):
         global_init("decks")
         return create_session()
 
-    def authorize(self):
-        post("http://kmetgwent.ddns.net/authorization")
+    def authorize(self, email, password):
+        data = get(f"http://kmetgwent.ddns.net/api/v2/player/{email}&{password}").json()
+        if isinstance(data, list):
+            self.id, self.nickname = data[0], data[1]
+            self.email, self.password = email, password
+            return 1
+        else:
+            return data
 
     def import_decks(self):
         decks = dict()
@@ -31,24 +36,11 @@ class Player:
         self.decks = decks
 
     def import_cards(self):
-        # global CARDS_LIST
-        data = get('http://kmetgwent.ddns.net/api/v2/my_deck/constructor/').json()
+        data = get('http://kmetgwent.ddns.net/api/v2/my_deck/constructor').json()
         cards = {"Нет карты": None}
         for asd in data:
             cards[asd] = create_card(data[asd])
-        print(cards)
         return cards
-
-    # def import_decks(self):
-    #     from Data import get_decks
-    #     decks = dict()
-    #     session = self.decks_base_session()
-    #     for deck in get_decks(self):
-    #         if deck.last_chosen:
-    #             self.deck = deck
-    #         decks[deck.name] = deck
-    #     session.commit()
-    #     self.decks = decks
 
     def new_last_chosen_deck(self):
         session = self.decks_base_session()
@@ -59,4 +51,5 @@ class Player:
         session.commit()
 
     def exit(self):
+        get(f"http://kmetgwent.ddns.net/api/v2/player/{self.email}&{self.password}")
         self.new_last_chosen_deck()

@@ -1,12 +1,13 @@
 import random
 import pygame_gui
+import sys
 
 from Cards import Card, Leader
 from Field import Field, Row
 from CONSTANTS import *
 from Storages import Dump, Deck, Hand
 from Player import Player
-from Menues import Menu, Constructor, init_menu, Matchmaking, GameUI
+from Menues import Menu, Constructor, Matchmaking, GameUI, init_menu, auth_buttons
 from PIL import Image, ImageEnhance, ImageFilter
 
 pygame.init()
@@ -17,13 +18,35 @@ running = True
 clock = pygame.time.Clock()
 player = Player()
 
+auth_menu = Menu(SWIDTH, SHEIGHT)
+auth_buttons(auth_menu)
+background = pygame.Surface((SWIDTH, SHEIGHT))
+auth = True
+while auth:
+    time_delta = clock.tick(FPS) / 1000.0
+    for event in pygame.event.get():
+        if event.type == pygame_gui.UI_BUTTON_PRESSED:
+            if event.ui_element.text == "Выйти":
+                auth = False
+                sys.exit()
+            if event.ui_element.text == "Войти":
+                data = player.authorize(auth_menu.entry_email.text, auth_menu.entry_password.text)
+                if data == 1:
+                    auth = False
+                else:
+                    auth_menu.message_label.set_text(data)
+        auth_menu.manager.process_events(event)
+        auth_menu.manager.update(time_delta)
+    screen.blit(background, (0, 0))
+    auth_menu.manager.draw_ui(screen)
+    pygame.display.update()
+
 start_menu = Menu(SWIDTH, SHEIGHT)
 play_menu = Matchmaking(SWIDTH, SHEIGHT, screen)
 constructor = Constructor(SWIDTH, SHEIGHT, screen, player)
 end_menu = Menu(SWIDTH, SHEIGHT)
 dd_menu = Menu(SWIDTH, SHEIGHT)
 mulligan_menu = GameUI()
-background = pygame.Surface((SWIDTH, SHEIGHT))
 
 MENU_VAR = 0
 GAME_FONT = pygame.font.SysFont(FONT, 30, bold=True)
@@ -38,7 +61,7 @@ to_render = ""
 
 menu_dict = {0: start_menu, 1: play_menu, 2: constructor, 3: "Game", 4: dd_menu, 5: mulligan_menu, 6: end_menu}
 init_menu(background, start_menu, play_menu, constructor, end_menu, dd_menu, mulligan_menu)
-
+print(start_menu.buttons)
 
 def draw_text(surf, text, text_size, x, y):
     """ Draw line of text in given coordinates"""

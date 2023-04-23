@@ -89,7 +89,7 @@ class Constructor(Menu):
         self.entry_index = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((1610, 1030), (300, 50)),
                                                                manager=self.manager,
                                                                initial_text="Введите индекс карты для удаления")
-        self.decks = player.decks
+        self.decks = player.import_cards()
         self.cards = {"Нет карты": None}
         self.chosen_card = None
         self.decks_drop_box = pygame_gui.elements.UIDropDownMenu(self.decks.keys(), manager=self.manager,
@@ -168,6 +168,18 @@ class Constructor(Menu):
 
     def save_deck(self):
         pass
+
+
+def auth_buttons(menu):
+    menu.set_button(860, 700, 200, 75, "Войти")
+    menu.set_button(860, 800, 200, 75, "Выйти")
+    menu.message_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((800, 680), (320, 25)),
+                                                          manager=menu.manager, text="")
+    menu.entry_email = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((835, 500), (250, 75)),
+                                                          manager=menu.manager, initial_text="Почта")
+    menu.entry_password = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((835, 600), (250, 75)),
+                                                           manager=menu.manager,
+                                                           initial_text="Пароль")
 
 
 def init_menu(back, start, play, cons, end, dd, mulligan):
