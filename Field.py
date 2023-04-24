@@ -289,8 +289,8 @@ class Field:
         self.op_deck = None
         self.chosen_storage = None
 
-        self.text_font30 = pygame.font.SysFont('arial', 30, bold=True)
-        self.text_font20 = pygame.font.SysFont('arial', 20, bold=True)
+        self.text_font26 = pygame.font.SysFont(FONT, 26, bold=True)
+        self.text_font20 = pygame.font.SysFont(FONT, 20, bold=True)
         self.screen = screen
         self.history = []
 
@@ -427,8 +427,8 @@ class Field:
 
     def draw_text(self, surf, text, size, x, y, color=(200, 200, 200)):
         """ Draw line of text in given coordinates"""
-        if size == 30:
-            surf.blit(self.text_font30.render(text, True, color), (x, y))
+        if size > 20:
+            surf.blit(self.text_font26.render(text, True, color), (x, y))
         else:
             surf.blit(self.text_font20.render(text, True, color), (x, y))
 

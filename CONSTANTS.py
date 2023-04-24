@@ -11,7 +11,7 @@ HAND_SIZE = 10
 ROW_SIZE = 9
 GET_CARDS = 4
 TEXT_LENGTH = 26
-FONT = 'arial'
+FONT = 'Georgia'
 CLICKABLE = []
 IMAGES = {}
 

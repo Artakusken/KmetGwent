@@ -16,11 +16,14 @@ size = SWIDTH, SHEIGHT
 screen = pygame.display.set_mode(size)
 running = True
 clock = pygame.time.Clock()
-player = Player()
+player = Player("127.0.0.1:8080")
+GAME_FONT = pygame.font.SysFont(FONT, 26, bold=True)
 
 auth_menu = Menu(SWIDTH, SHEIGHT)
 auth_buttons(auth_menu)
+image = pygame.transform.scale(pygame.image.load(os.path.join('Field\\loadscreen.png')), (1920, 1080))
 background = pygame.Surface((SWIDTH, SHEIGHT))
+background.blit(image, (0, 0, SWIDTH, SHEIGHT))
 auth = True
 while auth:
     time_delta = clock.tick(FPS) / 1000.0
@@ -32,6 +35,7 @@ while auth:
             if event.ui_element.text == "Войти":
                 data = player.authorize(auth_menu.entry_email.text, auth_menu.entry_password.text)
                 if data == 1:
+                    player.import_decks()
                     auth = False
                 else:
                     auth_menu.message_label.set_text(data)
@@ -49,7 +53,6 @@ dd_menu = Menu(SWIDTH, SHEIGHT)
 mulligan_menu = GameUI()
 
 MENU_VAR = 0
-GAME_FONT = pygame.font.SysFont(FONT, 30, bold=True)
 PAUSE = False
 CHOSEN_OBJECT = None
 PLAYER_HAND = Hand()
@@ -60,8 +63,8 @@ FIELD = Field(screen, PLAYER_DUMP, PLAYER_HAND)
 to_render = ""
 
 menu_dict = {0: start_menu, 1: play_menu, 2: constructor, 3: "Game", 4: dd_menu, 5: mulligan_menu, 6: end_menu}
-init_menu(background, start_menu, play_menu, constructor, end_menu, dd_menu, mulligan_menu)
-print(start_menu.buttons)
+init_menu(start_menu, play_menu, constructor, end_menu, dd_menu, mulligan_menu)
+
 
 def draw_text(surf, text, text_size, x, y):
     """ Draw line of text in given coordinates"""
@@ -220,7 +223,8 @@ def set_game(enemy_frac, player, pl_deck_name='Мужик * на 30', op_deck_na
     FIELD.turn = random.choice([True, False])
     FIELD.set_field(enemy_frac, player_deck, opponent_deck, CLICKABLE)
     CLICKABLE.reverse()  # reverse for the right order of objects (kinda importance sort)
-
+    pause_game()
+    FIELD.chosen_storage = PLAYER_HAND
 
 def end_game():
     """ Nulling CLICKABLE and refreshes game, hands and dumps"""
@@ -276,6 +280,7 @@ while running:
         if MENU_VAR < 3:
             screen.blit(background, (0, 0))
             menu_dict[MENU_VAR].manager.draw_ui(screen)
+            screen.blit(GAME_FONT.render(player.nickname, True, (200, 200, 200)), (20, 20))
         if MENU_VAR == 2:
             screen.blit(constructor.deck_background, (50, 178))
             screen.blit(constructor.card_background, (1550, 140))

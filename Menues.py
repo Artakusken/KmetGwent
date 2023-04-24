@@ -31,6 +31,7 @@ class Menu:
 
 class GameUI:
     """ Menus that are shown during game """
+
     def __init__(self):
         self.buttons_group = dict()
         self.state = "pause"
@@ -57,6 +58,7 @@ class GameUI:
 
 class Matchmaking(Menu):
     """A menu to display available opponents and the ability to choose who to play with """
+
     def __init__(self, x, y, screen):
         super().__init__(x, y)
         self.players_list = [1, 2, 4, 5, 6, 7, 8, 0]
@@ -89,15 +91,12 @@ class Constructor(Menu):
         self.entry_index = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((1610, 1030), (300, 50)),
                                                                manager=self.manager,
                                                                initial_text="Введите индекс карты для удаления")
-        self.decks = player.import_cards()
+        self.decks = player.decks
         self.cards = {"Нет карты": None}
         self.chosen_card = None
         self.decks_drop_box = pygame_gui.elements.UIDropDownMenu(self.decks.keys(), manager=self.manager,
                                                                  relative_rect=pygame.Rect((480, 20), (250, 75)),
                                                                  starting_option=player.deck.name)
-        # self.cards_drop_box = pygame_gui.elements.UIDropDownMenu(self.cards.keys(), manager=self.manager,
-        #                                                          relative_rect=pygame.Rect((740, 20), (250, 75)),
-        #                                                          starting_option=list(self.cards.keys())[0])
         self.max_provision = 150
         self.provision = 0
 
@@ -114,6 +113,7 @@ class Constructor(Menu):
         self.cards_drop_box = pygame_gui.elements.UIDropDownMenu(self.cards.keys(), manager=self.manager,
                                                                  relative_rect=pygame.Rect((740, 20), (250, 75)),
                                                                  starting_option=list(self.cards.keys())[0])
+
     def display_deck(self):
         """ Render a column of chosen deck's cards (name, power and provision)"""
         if type(self.current_deck) == Deck:
@@ -124,7 +124,7 @@ class Constructor(Menu):
 
     def display_info(self):
         """ Render text to inform player what is what"""
-        if self.current_deck:
+        if type(self.current_deck) == Deck:
             if len(self.current_deck.cards) > 1:
                 self.provision = sum([self.cards[i.name].provision for i in self.current_deck.cards])
             else:
@@ -174,19 +174,16 @@ def auth_buttons(menu):
     menu.set_button(860, 700, 200, 75, "Войти")
     menu.set_button(860, 800, 200, 75, "Выйти")
     menu.message_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((800, 680), (320, 25)),
-                                                          manager=menu.manager, text="")
+                                                     manager=menu.manager, text="")
     menu.entry_email = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((835, 500), (250, 75)),
-                                                          manager=menu.manager, initial_text="Почта")
+                                                           manager=menu.manager, initial_text="Почта")
     menu.entry_password = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((835, 600), (250, 75)),
-                                                           manager=menu.manager,
-                                                           initial_text="Пароль")
+                                                              manager=menu.manager,
+                                                              initial_text="Пароль")
 
 
-def init_menu(back, start, play, cons, end, dd, mulligan):
+def init_menu(start, play, cons, end, dd, mulligan):
     """ Create all buttons for the menus and load background image"""
-    image = pygame.transform.scale(pygame.image.load(os.path.join('Field\\loadscreen.png')), (1920, 1080))
-    back.blit(image, (0, 0, SWIDTH, SHEIGHT))
-
     start.set_button(300, 750, 200, 75, "Играть")
     start.set_button(300, 850, 200, 75, "Конструктор колоды")
     start.set_button(300, 950, 200, 75, "Выйти")
