@@ -17,11 +17,19 @@ class Player:
         global_init("decks")
         return create_session()
 
-    def authorize(self, email, password):
-        data = get(f"http://{self.server}/api/v2/player/{email}&{password}&in").json()
+    def authorize(self, email, password, cid=""):
+        if len(cid) > 0:
+            email = password = -1
+            data = get(f"http://{self.server}/api/v2/player/{email}&{password}&{cid}&in_cid").json()
+        elif cid == "":
+            data = get(f"http://{self.server}/api/v2/player/{email}&{password}&-1&in_email").json()
         if isinstance(data, list):
             self.id, self.nickname = data[0], data[1]
             self.email, self.password = email, password
+            with open("player_data.txt", "w") as player_data_file:
+                # print(data[0], end=";", file=player_data_file)
+                # print(data[1], end=";", file=player_data_file)
+                print(data[2], end="", file=player_data_file)
             return 1
         else:
             return data

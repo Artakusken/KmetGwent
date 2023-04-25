@@ -19,6 +19,11 @@ class Menu:
         self.buttons.append(pygame_gui.elements.UIButton(relative_rect=pygame.Rect((x, y), (width, height)), text=text,
                                                          manager=self.manager))
 
+    def delete_all_buttons(self):
+        for button in self.buttons:
+            button.kill()
+
+
     def draw_text(self, surf, text, size, x, y, color=(200, 200, 200)):
         """ Draw line of text in given coordinates"""
         if size == 20:
@@ -170,16 +175,24 @@ class Constructor(Menu):
         pass
 
 
-def auth_buttons(menu):
-    menu.set_button(860, 700, 200, 75, "Войти")
+def auth_buttons(menu, login):
     menu.set_button(860, 800, 200, 75, "Выйти")
-    menu.message_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((800, 680), (320, 25)),
-                                                     manager=menu.manager, text="")
-    menu.entry_email = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((835, 500), (250, 75)),
-                                                           manager=menu.manager, initial_text="Почта")
-    menu.entry_password = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((835, 600), (250, 75)),
-                                                              manager=menu.manager,
-                                                              initial_text="Пароль")
+    player_info = open("player_data.txt").readline()
+    from requests import get
+    if len(player_info) < 1 or login:
+        menu.set_button(860, 700, 200, 75, "Войти")
+        menu.message_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((800, 680), (320, 25)),
+                                                         manager=menu.manager, text="")
+        menu.entry_email = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((835, 500), (250, 75)),
+                                                               manager=menu.manager, initial_text="Почта")
+        menu.entry_password = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((835, 600), (250, 75)),
+                                                                  manager=menu.manager,
+                                                                  initial_text="Пароль")
+    else:
+        menu.message_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((800, 680), (320, 25)),
+                                                         manager=menu.manager, text=f"Войти как {get(f'http://127.0.0.1:8080/api/v2/player/-1&-1&{player_info}&in_cid').json()[1]}")
+        menu.set_button(860, 700, 200, 75, "Войти в аккаунт")
+        menu.set_button(860, 600, 200, 75, "Войти в другой аккаунт")
 
 
 def init_menu(start, play, cons, end, dd, mulligan):

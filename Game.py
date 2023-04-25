@@ -20,7 +20,7 @@ player = Player("127.0.0.1:8080")
 GAME_FONT = pygame.font.SysFont(FONT, 26, bold=True)
 
 auth_menu = Menu(SWIDTH, SHEIGHT)
-auth_buttons(auth_menu)
+auth_buttons(auth_menu, False)
 image = pygame.transform.scale(pygame.image.load(os.path.join('Field\\loadscreen.png')), (1920, 1080))
 background = pygame.Surface((SWIDTH, SHEIGHT))
 background.blit(image, (0, 0, SWIDTH, SHEIGHT))
@@ -33,12 +33,25 @@ while auth:
                 auth = False
                 sys.exit()
             if event.ui_element.text == "Войти":
+                print(auth_menu.entry_password.text)
                 data = player.authorize(auth_menu.entry_email.text, auth_menu.entry_password.text)
                 if data == 1:
                     player.import_decks()
                     auth = False
                 else:
                     auth_menu.message_label.set_text(data)
+            if event.ui_element.text == "Войти в аккаунт":
+                client_id = open("player_data.txt").readline()
+                data = player.authorize("", "", client_id)
+                if data == 1:
+                    player.import_decks()
+                    auth = False
+                else:
+                    auth_menu.message_label.set_text(data)
+            if event.ui_element.text == "Войти в другой аккаунт":
+                auth_menu.delete_all_buttons()
+                auth_menu.message_label.set_text("")
+                auth_buttons(auth_menu, True)
         auth_menu.manager.process_events(event)
         auth_menu.manager.update(time_delta)
     screen.blit(background, (0, 0))
