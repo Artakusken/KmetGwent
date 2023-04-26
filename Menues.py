@@ -176,10 +176,15 @@ class Constructor(Menu):
 
 
 def auth_buttons(menu, login):
-    menu.set_button(860, 800, 200, 75, "Выйти")
-    player_info = open("player_data.txt").readline()
     from requests import get
-    if len(player_info) < 1 or login:
+    menu.set_button(860, 800, 200, 75, "Выйти")
+    try:
+        client_id = open("player_data.txt").readline()
+    except FileNotFoundError:
+        with open("player_data.txt", "w") as new_data_file:
+            print("", end='', file=new_data_file)
+        client_id = open("player_data.txt").readline()
+    if len(client_id) < 1 or login:
         menu.set_button(860, 700, 200, 75, "Войти")
         menu.message_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((800, 680), (320, 25)),
                                                          manager=menu.manager, text="")
@@ -190,7 +195,7 @@ def auth_buttons(menu, login):
                                                                   initial_text="Пароль")
     else:
         menu.message_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((800, 680), (320, 25)),
-                                                         manager=menu.manager, text=f"Войти как {get(f'http://127.0.0.1:8080/api/v2/player/-1&-1&{player_info}&in_cid').json()[1]}")
+                                                         manager=menu.manager, text=f"Войти как {get(f'http://127.0.0.1:8080/api/v2/player/-1&-1&{client_id}&in_cid&0').json()[1]}")
         menu.set_button(860, 700, 200, 75, "Войти в аккаунт")
         menu.set_button(860, 600, 200, 75, "Войти в другой аккаунт")
 

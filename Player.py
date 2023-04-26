@@ -1,6 +1,6 @@
 from socket import gethostname, gethostbyname
 from Data import global_init, create_session, Decks, create_deck, create_card
-from requests import get, post, delete
+from requests import get, post, delete, put
 
 
 class Player:
@@ -19,13 +19,12 @@ class Player:
 
     def authorize(self, email, password, cid=""):
         if len(cid) > 0:
-            email = password = -1
-            data = get(f"http://{self.server}/api/v2/player/{email}&{password}&{cid}&in_cid").json()
+            data = get(f"http://{self.server}/api/v2/player/-1&-1&{cid}&in_cid&1").json()
         elif cid == "":
-            data = get(f"http://{self.server}/api/v2/player/{email}&{password}&-1&in_email").json()
+            data = get(f"http://{self.server}/api/v2/player/{email}&{password}&-1&in_email&1").json()
         if isinstance(data, list):
             self.id, self.nickname = data[0], data[1]
-            self.email, self.password = email, password
+            self.email, self.password, self.cid = email, password, cid
             with open("player_data.txt", "w") as player_data_file:
                 # print(data[0], end=";", file=player_data_file)
                 # print(data[1], end=";", file=player_data_file)
@@ -60,6 +59,25 @@ class Player:
         chosen_deck.last_chosen = 1
         session.commit()
 
+    def find_opponents(self, stop):
+        self.ready_to_play = True
+        if not stop:
+            put(f"http://{self.server}/api/v2/player/-1&-1&{self.cid}&in_cid&find_opponents")
+        else:
+            put(f"http://{self.server}/api/v2/player/-1&-1&{self.cid}&in_cid&stop_find_opponents")
+
+    def start_the_game(self):
+        self.playing = True
+        self.ready_to_play = False
+        put(f"http://{self.server}/api/v2/player/-1&-1&{self.cid}&in_cid&start_the_game")
+
+    def ensure_connection(self):
+        get(f'http://{self.server}/session/{self.id}')
+
+    def end_the_game(self):
+        self.playing = False
+        put(f"http://{self.server}/api/v2/player/-1&-1&{self.cid}&in_cid&end_the_game")
+
     def exit(self):
-        get(f"http://{self.server}/api/v2/player/{self.email}&{self.password}&out")
+        get(f"http://{self.server}/api/v2/player/-1&-1&{self.cid}&out&1")
         self.new_last_chosen_deck()

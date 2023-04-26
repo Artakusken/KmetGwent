@@ -25,6 +25,7 @@ image = pygame.transform.scale(pygame.image.load(os.path.join('Field\\loadscreen
 background = pygame.Surface((SWIDTH, SHEIGHT))
 background.blit(image, (0, 0, SWIDTH, SHEIGHT))
 auth = True
+
 while auth:
     time_delta = clock.tick(FPS) / 1000.0
     for event in pygame.event.get():
@@ -33,7 +34,6 @@ while auth:
                 auth = False
                 sys.exit()
             if event.ui_element.text == "Войти":
-                print(auth_menu.entry_password.text)
                 data = player.authorize(auth_menu.entry_email.text, auth_menu.entry_password.text)
                 if data == 1:
                     player.import_decks()
@@ -41,7 +41,12 @@ while auth:
                 else:
                     auth_menu.message_label.set_text(data)
             if event.ui_element.text == "Войти в аккаунт":
-                client_id = open("player_data.txt").readline()
+                try:
+                    client_id = open("player_data.txt").readline()
+                except FileNotFoundError:
+                    with open("player_data.txt", "w") as new_data_file:
+                        print("", end='', file=new_data_file)
+                    client_id = open("player_data.txt").readline()
                 data = player.authorize("", "", client_id)
                 if data == 1:
                     player.import_decks()
@@ -219,7 +224,7 @@ def get_player_deck(player):
             cards.append(card)
             CLICKABLE.append(card)
         return Deck(player.deck.name, "Me", cards, 1)
-    return
+    return None
 
 
 def set_game(enemy_frac, player, pl_deck_name='Мужик * на 30', op_deck_name='Мужик * на 30, x2'):
@@ -238,6 +243,8 @@ def set_game(enemy_frac, player, pl_deck_name='Мужик * на 30', op_deck_na
     CLICKABLE.reverse()  # reverse for the right order of objects (kinda importance sort)
     pause_game()
     FIELD.chosen_storage = PLAYER_HAND
+    player.start_the_game()
+
 
 def end_game():
     """ Nulling CLICKABLE and refreshes game, hands and dumps"""
@@ -251,9 +258,15 @@ def end_game():
     OPPONENT_DUMP.refresh(CLICKABLE)
 
 
+connection_check_timer = 0.0
+time_delta = clock.tick(FPS) / 1000.0
 while running:
+    connection_check_timer += time_delta
+    if connection_check_timer > 1000:
+        player.ensure_connection()
+        connection_check_timer = 0
+
     if MENU_VAR < 3:
-        time_delta = clock.tick(FPS) / 1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -264,9 +277,12 @@ while running:
                 if event.ui_element.text == "Выйти в меню":
                     constructor.cards = {}
                     MENU_VAR = 0
+                    player.find_opponents(stop=True)
                 if event.ui_element.text == "Играть":
-                    MENU_VAR = 1
-                    play_menu.init_enemies()
+                    if player.deck:
+                        MENU_VAR = 1
+                        play_menu.init_enemies()
+                        player.find_opponents(stop=False)
                 if event.ui_element.text == "Конструктор колоды":
                     constructor.cards = player.import_cards()
                     constructor.full_box()
@@ -409,6 +425,7 @@ while running:
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element.text == "Выйти в меню":
                     MENU_VAR = 0
+                    player.end_the_game()
             menu_dict[MENU_VAR].manager.process_events(event)
             menu_dict[MENU_VAR].manager.update(30 / 1000)
         menu_dict[MENU_VAR].manager.draw_ui(screen)
