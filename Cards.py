@@ -267,8 +267,8 @@ class Leader(pygame.sprite.Sprite):
             self.fraction = "Королевства Севера"
         elif fraction == "NG":
             self.fraction = "Нильфгаард"
-        else:
-            self.fraction = fraction
+        elif fraction == "SC":
+            self.fraction = "Скоятаэли"
 
         self.rect = pygame.Rect(x, y, LEADER_W, LEADER_H)
         # self.image_path = name + '.png'

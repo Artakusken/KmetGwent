@@ -1,3 +1,4 @@
+import datetime
 import random
 import pygame_gui
 import sys
@@ -119,6 +120,7 @@ def end_move():
     PLAYER_HAND.end_move(FIELD)
     if FIELD.pl_round_score == 2 or FIELD.op_round_score == 2:
         MENU_VAR = 6
+        player.end_the_game(FIELD.pl_round_score, FIELD.op_round_score, 0)
         screen.blit(background, (0, 0))
         FIELD.draw_end()
         return
@@ -155,6 +157,7 @@ def in_area(coord, mouse_type, display):
         if 5 < x < 80 and 500 < y < 575:
             MENU_VAR = 6
             screen.blit(background, (0, 0))
+            player.end_the_game(FIELD.pl_round_score, FIELD.op_round_score, 1)
             FIELD.draw_end()
     return "Nothing"
 
@@ -243,6 +246,7 @@ def set_game(enemy_frac, player, pl_deck_name='Мужик * на 30', op_deck_na
     CLICKABLE.reverse()  # reverse for the right order of objects (kinda importance sort)
     pause_game()
     FIELD.chosen_storage = PLAYER_HAND
+    player.fraction = FIELD.pl_leader.fraction
     player.start_the_game()
 
 
@@ -258,13 +262,13 @@ def end_game():
     OPPONENT_DUMP.refresh(CLICKABLE)
 
 
-connection_check_timer = 0.0
+connection_check_timer = datetime.datetime.now()
 time_delta = clock.tick(FPS) / 1000.0
 while running:
-    connection_check_timer += time_delta
-    if connection_check_timer > 1000:
+    gap = connection_check_timer - datetime.datetime.now()
+    if gap.total_seconds() < -20:
         player.ensure_connection()
-        connection_check_timer = 0
+        connection_check_timer = datetime.datetime.now()
 
     if MENU_VAR < 3:
         for event in pygame.event.get():
@@ -425,7 +429,6 @@ while running:
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element.text == "Выйти в меню":
                     MENU_VAR = 0
-                    player.end_the_game()
             menu_dict[MENU_VAR].manager.process_events(event)
             menu_dict[MENU_VAR].manager.update(30 / 1000)
         menu_dict[MENU_VAR].manager.draw_ui(screen)
