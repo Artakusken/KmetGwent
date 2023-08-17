@@ -26,8 +26,6 @@ class Card:
         self.provision = provision
         self.card_type = card_type
         self.tags = tags
-        self.font24 = pygame.font.Font(None, 24)
-        self.font40 = pygame.font.Font(None, 40)
         # initial game parameters
         self.row = None
         self.column = None
@@ -84,18 +82,15 @@ class Card:
         else:
             return ["EMPTY DESCRIPTION"]
 
-    def display_cards_points(self, x, y, size, ptype, screen):
+    def display_cards_points(self, x, y, size, ptype, screen, font):
         """ Render card's (placed in the row or hand) points over slot on the left upper corner and armor on the right upper corner"""
         if size == "M":
-            font = self.font40
             dx = 267
             text_coord_delta = 15
         elif size == "D":
-            font = self.font40
             dx = 160
             text_coord_delta = 15
         else:
-            font = self.font24
             dx = 77
             text_coord_delta = 10
         y += 2
@@ -120,30 +115,30 @@ class Card:
             else:
                 screen.blit(armor, (x + dx + text_coord_delta, y + text_coord_delta))
 
-    def render(self, x, y, size, screen):
+    def render(self, x, y, size, screen, font):
         """ Render card's image and set its collision"""
         if self.rect:
             if size == 'M':
                 screen.blit(self.Mimage, (x, y, MCARD_W, MCARD_H))
                 screen.blit(IMAGES["LLCorner"], (x, y))
-                self.display_cards_points(x, y, "M", "p", screen)
+                self.display_cards_points(x, y, "M", "p", screen, font)
                 if self.armor > 0:
                     screen.blit(IMAGES["LRCorner"], (x + 263, y + 2))
-                    self.display_cards_points(x, y, "M", "a", screen)
+                    self.display_cards_points(x, y, "M", "a", screen, font)
             elif size == 'D':
                 screen.blit(self.MSimage, (x, y, LEADER_W, LEADER_H))
                 screen.blit(IMAGES["LLCorner"], (x, y))
-                self.display_cards_points(x, y, "D", "p", screen)
+                self.display_cards_points(x, y, "D", "p", screen, font)
                 if self.armor > 0:
                     screen.blit(IMAGES["LRCorner"], (x + 156, y + 4))
-                    self.display_cards_points(x, y, "D", "a", screen)
+                    self.display_cards_points(x, y, "D", "a", screen, font)
             else:
                 screen.blit(self.Simage, (x, y, SCARD_W, SCARD_H))
                 screen.blit(IMAGES["SLCorner"], (x, y))
-                self.display_cards_points(x, y, "S", "p", screen)
+                self.display_cards_points(x, y, "S", "p", screen, font)
                 if self.armor > 0:
                     screen.blit(IMAGES["SRCorner"], (x + 77, y + 3))
-                    self.display_cards_points(x, y, "S", "a", screen)
+                    self.display_cards_points(x, y, "S", "a", screen, font)
                 if self.status == "chosen":
                     screen.blit(self.frame, (x - 3, y - 3))
 

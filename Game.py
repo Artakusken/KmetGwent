@@ -1,6 +1,7 @@
 import random
 import pygame_gui
 import sys
+import time
 
 from Cards import Card, Leader
 from Field import Field, Row
@@ -9,7 +10,8 @@ from Storages import Dump, Deck, Hand
 from Player import Player
 from Menues import Menu, Constructor, Matchmaking, GameUI, init_menu, auth_buttons
 from PIL import Image, ImageEnhance, ImageFilter
-
+log_file = open("log.txt", mode="w")
+load_start_time = time.time()
 pygame.init()
 
 size = SWIDTH, SHEIGHT
@@ -25,7 +27,7 @@ image = pygame.transform.scale(pygame.image.load(os.path.join('Field\\loadscreen
 background = pygame.Surface((SWIDTH, SHEIGHT))
 background.blit(image, (0, 0, SWIDTH, SHEIGHT))
 auth = True
-
+print("LOAD LOG: auth time loading ", time.time() - load_start_time, file=log_file)
 while auth:
     time_delta = clock.tick(FPS) / 1000.0
     for event in pygame.event.get():
@@ -62,6 +64,7 @@ while auth:
     screen.blit(background, (0, 0))
     auth_menu.manager.draw_ui(screen)
     pygame.display.update()
+load_start_time = time.time()
 
 start_menu = Menu(SWIDTH, SHEIGHT)
 play_menu = Matchmaking(SWIDTH, SHEIGHT, screen)
@@ -147,7 +150,7 @@ def in_area(coord, mouse_type, display):
                 return str(game_object.name)
         if mouse_type == 3:
             PLAYER_HAND.up_when_hovered(coord)
-            for row in FIELD.rows_list:
+            for row in FIELD.rows:
                 row.when_hovered(coord, CHOSEN_OBJECT, display)
     if mouse_type == 1:
         if 305 < x < 455 and 450 < y < 600:
@@ -230,6 +233,7 @@ def get_player_deck(player):
 def set_game(enemy_frac, player, pl_deck_name='Мужик * на 30', op_deck_name='Мужик * на 30, x2'):
     """ Called when game is chosen. Forms players' decks and hands. Choose who has first game turn and set field"""
     global FIELD, PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP
+    set_game_start_time = time.time()
     player_deck = get_player_deck(player)
     for i in player_deck.cards:
         i.location = player_deck
@@ -244,6 +248,7 @@ def set_game(enemy_frac, player, pl_deck_name='Мужик * на 30', op_deck_na
     pause_game()
     FIELD.chosen_storage = PLAYER_HAND
     player.start_the_game()
+    print("LOAD LOG: game loading time", time.time() - set_game_start_time, file=log_file)
 
 
 def end_game():
@@ -258,6 +263,7 @@ def end_game():
     OPPONENT_DUMP.refresh(CLICKABLE)
 
 
+print("LOAD LOG: post auth time loading ", time.time() - load_start_time, file=log_file)
 connection_check_timer = 0.0
 time_delta = clock.tick(FPS) / 1000.0
 while running:
@@ -331,7 +337,7 @@ while running:
             # to_render = f"{a, clock.get_fps()}"
             to_render = f"{a, pygame.mouse.get_pos()}"
             FIELD.draw_rows()
-            text_surface = GAME_FONT.render(to_render, True, (200, 200, 200))
+            # text_surface = GAME_FONT.render(to_render, True, (200, 200, 200))
             # screen.blit(text_surface, (250, 900))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -347,7 +353,6 @@ while running:
                             CHOSEN_OBJECT.status = "passive"
                             CHOSEN_OBJECT = None
             pygame.display.flip()
-            clock.tick(FPS)
         else:
             if isinstance(FIELD.chosen_storage, Deck):
                 FIELD.check_deck(FIELD.chosen_storage)
@@ -361,7 +366,6 @@ while running:
                 FIELD.render_game_field(PLAYER_HAND, OPPONENT_HAND, PLAYER_DUMP, OPPONENT_DUMP)
                 a = in_area(pygame.mouse.get_pos(), 3, screen)
                 FIELD.draw_rows()
-                clock.tick(FPS)
 
             if FIELD.chosen_storage:
                 deck_dump_hover(FIELD.chosen_storage.cards, pygame.mouse.get_pos(), 3)
@@ -430,4 +434,6 @@ while running:
             menu_dict[MENU_VAR].manager.update(30 / 1000)
         menu_dict[MENU_VAR].manager.draw_ui(screen)
         pygame.display.update()
+    clock.tick(FPS)
 pygame.quit()
+log_file.close()

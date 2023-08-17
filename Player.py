@@ -7,6 +7,11 @@ class Player:
     def __init__(self, server):
         self.deck = None
         self.fraction = None
+        self.id = None
+        self.nickname = None
+        self.email = None
+        self.password = None
+        self.cid = None
         self.ip = gethostbyname(gethostname())
         self.decks = None
         self.server = server
@@ -18,9 +23,9 @@ class Player:
         return create_session()
 
     def authorize(self, email, password, cid=""):
-        if len(cid) > 0:
+        if cid:
             data = get(f"http://{self.server}/api/v2/player/-1&-1&{cid}&in_cid&1").json()
-        elif cid == "":
+        else:
             data = get(f"http://{self.server}/api/v2/player/{email}&{password}&-1&in_email&1").json()
         if isinstance(data, list):
             self.id, self.nickname = data[0], data[1]
@@ -34,7 +39,7 @@ class Player:
             return data
 
     def import_decks(self):
-        decks = dict()
+        decks = {}
         session = self.decks_base_session()
         for deck in session.query(Decks).all():
             real_cards = get(f'http://{self.server}/api/v2/my_deck/{deck.cards}').json()
