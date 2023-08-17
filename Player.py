@@ -29,7 +29,8 @@ class Player:
             data = get(f"http://{self.server}/api/v2/player/{email}&{password}&-1&in_email&1").json()
         if isinstance(data, list):
             self.id, self.nickname = data[0], data[1]
-            self.email, self.password, self.cid = email, password, cid
+            self.email, self.password = email, password
+            self.cid = data[2]
             with open("player_data.txt", "w") as player_data_file:
                 # print(data[0], end=";", file=player_data_file)
                 # print(data[1], end=";", file=player_data_file)
@@ -79,8 +80,9 @@ class Player:
     def ensure_connection(self):
         get(f'http://{self.server}/session/{self.id}')
 
-    def end_the_game(self):
+    def end_the_game(self, pl_points, op_points, premature):
         self.playing = False
+        put(f"http://{self.server}/api/v2/session/{self.id}&{pl_points}&{op_points}&{self.fraction}&{premature}&1")
         put(f"http://{self.server}/api/v2/player/-1&-1&{self.cid}&in_cid&end_the_game")
 
     def exit(self):
