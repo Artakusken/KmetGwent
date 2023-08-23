@@ -82,18 +82,20 @@ class Card:
         else:
             return ["EMPTY DESCRIPTION"]
 
-    def display_cards_points(self, x, y, size, ptype, screen, font):
+    def display_cards_points(self, x, y, size, screen, font):
         """ Render card's (placed in the row or hand) points over slot on the left upper corner and armor on the right upper corner"""
         if size == "M":
-            dx = 267
-            text_coord_delta = 15
+            armor_x_diff = 254
+            points_x_diff = 40
+            points_y_diff = 35
         elif size == "D":
-            dx = 160
-            text_coord_delta = 15
+            armor_x_diff = 168
+            points_x_diff = 27
+            points_y_diff = 24
         else:
-            dx = 77
-            text_coord_delta = 10
-        y += 2
+            armor_x_diff = 83
+            points_x_diff = 14
+            points_y_diff = 11
 
         if self.power == self.bp:
             font_color = (200, 200, 200)
@@ -101,44 +103,44 @@ class Card:
             font_color = (50, 200, 50)
         else:
             font_color = (200, 50, 50)
-        if ptype == "p":
-            points = font.render(str(self.power), True, font_color)
-            # screen.blit(font.render(str(self.turns_on_field), True, font_color), (x + dx // 2, y + 90))
-            if self.power > 9:
-                screen.blit(points, (x + text_coord_delta, y + text_coord_delta))
-            else:
-                screen.blit(points, (x + text_coord_delta + 6, y + text_coord_delta))
+
+        points = font.render(str(self.power), True, font_color)
+        if self.power > 9:
+            screen.blit(points, (x + points_x_diff - font.get_linesize() // 4, y + points_y_diff))
         else:
+            screen.blit(points, (x + points_x_diff, y + points_y_diff))
+
+        if self.armor > 0:
             armor = font.render(str(self.armor), True, (0, 0, 0))
             if self.armor > 9:
-                screen.blit(armor, (x + dx + text_coord_delta - 6, y + text_coord_delta))
+                screen.blit(armor, (x + armor_x_diff - font.get_linesize() // 4, y + points_y_diff))
             else:
-                screen.blit(armor, (x + dx + text_coord_delta, y + text_coord_delta))
+                screen.blit(armor, (x + armor_x_diff, y + points_y_diff))
 
     def render(self, x, y, size, screen, font):
         """ Render card's image and set its collision"""
         if self.rect:
             if size == 'M':
                 screen.blit(self.Mimage, (x, y, MCARD_W, MCARD_H))
-                screen.blit(IMAGES["LLCorner"], (x, y))
-                self.display_cards_points(x, y, "M", "p", screen, font)
+                screen.blit(IMAGES["border_bronze_medium"], (x, y))
+                screen.blit(IMAGES["nilf_frame_medium"], (x - 8, y - 8))
                 if self.armor > 0:
-                    screen.blit(IMAGES["LRCorner"], (x + 263, y + 2))
-                    self.display_cards_points(x, y, "M", "a", screen, font)
+                    screen.blit(IMAGES["armor_medium"], (x + 221, y))
+                self.display_cards_points(x, y, "M", screen, font)
             elif size == 'D':
                 screen.blit(self.MSimage, (x, y, LEADER_W, LEADER_H))
-                screen.blit(IMAGES["LLCorner"], (x, y))
-                self.display_cards_points(x, y, "D", "p", screen, font)
+                screen.blit(IMAGES["border_bronze_deck"], (x, y))
+                screen.blit(IMAGES["nilf_frame_deck"], (x - 5, y - 5))
                 if self.armor > 0:
-                    screen.blit(IMAGES["LRCorner"], (x + 156, y + 4))
-                    self.display_cards_points(x, y, "D", "a", screen, font)
+                    screen.blit(IMAGES["armor_deck"], (x + 146, y))
+                self.display_cards_points(x, y, "D", screen, font)
             else:
                 screen.blit(self.Simage, (x, y, SCARD_W, SCARD_H))
-                screen.blit(IMAGES["SLCorner"], (x, y))
-                self.display_cards_points(x, y, "S", "p", screen, font)
+                screen.blit(IMAGES["border_bronze_small"], (x, y))
+                screen.blit(IMAGES["nilf_frame_small"], (x - 2, y - 2))
                 if self.armor > 0:
-                    screen.blit(IMAGES["SRCorner"], (x + 77, y + 3))
-                    self.display_cards_points(x, y, "S", "a", screen, font)
+                    screen.blit(IMAGES["armor_small"], (x + 73, y))
+                self.display_cards_points(x, y, "S", screen, font)
                 if self.status == "chosen":
                     screen.blit(self.frame, (x - 3, y - 3))
 
@@ -354,3 +356,4 @@ class Leader(pygame.sprite.Sprite):
         if self.status != 'passive':
             screen.blit(self.frame, (self.rect[0] - 10, self.rect[1] - 10))
         screen.blit(self.frames[self.cur_frame], (self.rect[0], self.rect[1]))
+        screen.blit(IMAGES["border_golden_leader"], (self.rect[0], self.rect[1]))

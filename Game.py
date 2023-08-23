@@ -13,7 +13,6 @@ from PIL import Image, ImageEnhance, ImageFilter
 log_file = open("log.txt", mode="w")
 load_start_time = time.time()
 pygame.init()
-
 size = SWIDTH, SHEIGHT
 screen = pygame.display.set_mode(size)
 running = True
@@ -429,7 +428,7 @@ while running:
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element.text == "Выйти в меню":
                     MENU_VAR = 0
-                    player.end_the_game()
+                    player.end_the_game(FIELD.pl_round_score, FIELD.op_round_score, 0)
             menu_dict[MENU_VAR].manager.process_events(event)
             menu_dict[MENU_VAR].manager.update(30 / 1000)
         menu_dict[MENU_VAR].manager.draw_ui(screen)

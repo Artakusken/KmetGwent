@@ -293,6 +293,7 @@ class Field:
         self.text_font20 = pygame.font.SysFont(FONT, 20, bold=True)
         self.font24 = pygame.font.Font(None, 24)
         self.font40 = pygame.font.Font(None, 40)
+        self.font60 = pygame.font.Font(None, 60)
         self.screen = screen
         self.history = []
 
@@ -480,13 +481,14 @@ class Field:
             if card.tags:
                 self.panel_tags = ", ".join(card.tags)
             self.panel_text = card.description
-            card.render(1580, 230, "M", self.screen, self.font40)
+            card.render(1580, 230, "M", self.screen, self.font60)
             self.draw_text(self.screen, str(card.column), 30, 1580, 850, (0, 0, 0))
             self.draw_text(self.screen, str(card.row), 30, 1610, 850, (0, 0, 0))
             self.draw_text(self.screen, card.status, 30, 1750, 850, (0, 0, 0))
         elif type(self.panel) == Leader:
             card = self.panel
-            self.screen.blit(card.image, (1580, 230, 320, 458))
+            self.screen.blit(card.image, (1580, 230, 320, 459))
+            self.screen.blit(IMAGES["border_golden_medium"], (1580, 230))
             self.panel_name = card.name
             self.panel_text = card.description
             self.panel_tags = ""
