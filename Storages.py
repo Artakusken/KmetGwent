@@ -1,5 +1,6 @@
 import random
 
+
 class Hand:
     """
     A class which represent container of cards usable for player. These cards are seen only for player and their points don't affect on score.
@@ -64,7 +65,7 @@ class Hand:
             i.status = 'passive'
         if self.round < field.round:
             self.mulligans = 4
-            self.end_round(field.pl_deck)
+            self.end_round(field.player_deck)
 
     def end_round(self, deck):
         """ Draw new cards to hand and increment round value"""
@@ -101,14 +102,14 @@ class Deck:
     These cards are seen only for a player, their points don't affect on score and player don't know their order.
     """
 
-    def __init__(self, name, player, cards, last_time, id=None):
+    def __init__(self, name, player, cards, last_time, deck_id=None):
         self.cards = self.set_cards(cards)
         self.name = name
         self.player = player
         self.fake_order = []
         self.str_type = "Deck"
         self.last_chosen = last_time
-        self.id = id
+        self.id = deck_id
         if len(self.cards) > 1:
             if self.player == "Me":
                 self.rect = (1630, 935, 105, 150)
