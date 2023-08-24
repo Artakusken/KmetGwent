@@ -25,11 +25,12 @@ def brothers_at_arms(card, field, row):
         if "Солдаты" in row.cards[my_position - 1].tags and "Солдаты" in row.cards[my_position + 1].tags:
             card.power += 1
 
-METHODS = {}
-METHODS["cant_stand_brothers"] = cant_stand_brothers
-METHODS["healing_armor"] = healing_armor
-METHODS["recruit"] = recruit
 
+METHODS = {
+    "cant_stand_brothers": cant_stand_brothers,
+    "healing_armor": healing_armor,
+    "recruit": recruit
+}
 
 if __name__ == '__main__':
     import marshal

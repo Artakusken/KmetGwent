@@ -1,11 +1,11 @@
 import os
 import pygame
 
-SWIDTH, SHEIGHT = 1920, 1080
+SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080
 FPS = 30
-LEADER_W, LEADER_H = 212, 309  # ideal aspect ratio is 212x304  (default card is 992x1424)
-MCARD_W, MCARD_H = 320, 459  # ideal aspect ratio is 320x459  (default card is 992x1424)
-SCARD_W, SCARD_H = 106, 148  # ideal aspect ratio is 106x152  (default card is 992x1424)
+LEADER_WIDTH, LEADER_HEIGHT = 212, 309  # ideal aspect ratio is 212x304  (default card is 992x1424)
+MEDIUM_CARD_WIDTH, MEDIUM_CARD_HEIGHT = 320, 459  # ideal aspect ratio is 320x459  (default card is 992x1424)
+SMALL_CARD_WIDTH, SMALL_CARD_HEIGHT = 106, 148  # ideal aspect ratio is 106x152  (default card is 992x1424)
 DECK_SIZE = 30
 HAND_SIZE = 10
 ROW_SIZE = 9
@@ -24,13 +24,15 @@ def load_image(name, card_size):
         elif card_size == "O":
             image = pygame.image.load(directory)
         elif card_size == 'M':
-            image = pygame.transform.smoothscale(pygame.image.load(directory), (MCARD_W, MCARD_H))
+            image = pygame.transform.smoothscale(pygame.image.load(directory), (MEDIUM_CARD_WIDTH, MEDIUM_CARD_HEIGHT))
+        elif card_size == 'D':
+            image = pygame.transform.smoothscale(pygame.image.load(directory), (LEADER_WIDTH, LEADER_HEIGHT))
         elif card_size == 'K':
             image = pygame.transform.smoothscale(pygame.image.load(directory), (150, 150))
         elif card_size == 'HD':
-            image = pygame.transform.smoothscale(pygame.image.load(directory), (SWIDTH, SHEIGHT))
+            image = pygame.transform.smoothscale(pygame.image.load(directory), (SCREEN_WIDTH, SCREEN_HEIGHT))
         else:
-            image = pygame.transform.smoothscale(pygame.image.load(directory), (SCARD_W, SCARD_H))
+            image = pygame.transform.smoothscale(pygame.image.load(directory), (SMALL_CARD_WIDTH, SMALL_CARD_HEIGHT))
         return image
 
 
@@ -56,9 +58,9 @@ IMAGES["armor_small"] = load_image('CardsPictures\\armor.png', (30, 35))
 
 IMAGES["border_bronze_large"] = load_image('CardsPictures\\border_bronze.png', "O")
 IMAGES["border_bronze_medium"] = load_image('CardsPictures\\border_bronze.png', "M")
-IMAGES["border_bronze_deck"] = load_image('CardsPictures\\border_bronze.png', (LEADER_W, LEADER_H))
+IMAGES["border_bronze_deck"] = load_image('CardsPictures\\border_bronze.png', (LEADER_WIDTH, LEADER_HEIGHT))
 IMAGES["border_bronze_small"] = load_image('CardsPictures\\border_bronze.png', "S")
 
-IMAGES["border_golden_leader"] = load_image('CardsPictures\\border_gold.png', (LEADER_W, LEADER_H))
+IMAGES["border_golden_leader"] = load_image('CardsPictures\\border_gold.png', (LEADER_WIDTH, LEADER_HEIGHT))
 IMAGES["border_golden_large"] = load_image('CardsPictures\\border_gold.png', "O")
 IMAGES["border_golden_medium"] = load_image('CardsPictures\\border_gold.png', "M")

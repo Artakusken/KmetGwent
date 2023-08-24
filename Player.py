@@ -1,5 +1,5 @@
 from socket import gethostname, gethostbyname
-from Data import global_init, create_session, Decks, create_deck, create_card
+from data import global_init, create_session, Decks, create_deck, create_card
 from requests import get, post, delete, put
 
 

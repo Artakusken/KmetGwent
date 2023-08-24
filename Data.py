@@ -1,6 +1,6 @@
-from Cards import Card
-from Storages import Deck
-from Cards_Abilities import METHODS
+from cards import Card
+from storages import Deck
+from cards_abilities import METHODS
 
 import sqlalchemy
 import sqlalchemy_serializer
@@ -72,9 +72,9 @@ class Methods(CardsBase, sqlalchemy_serializer.SerializerMixin):
     type = sqlalchemy.Column(sqlalchemy.Integer)
     name = sqlalchemy.Column(sqlalchemy.String, unique=True, nullable=False)
 
-    def __init__(self, def_name, type):
-        self.name = def_name
-        self.type = type
+    def __init__(self, func_name, func_type):
+        self.name = func_name
+        self.type = func_type
 
 
 class MethodsType(CardsBase, sqlalchemy_serializer.SerializerMixin):
@@ -112,8 +112,6 @@ def global_init(db_file):
     if not db_file or not db_file.strip():
         raise Exception("Необходимо указать файл базы данных.")
 
-    engine = base_engines[db_file]
-    # __factory = orm.sessionmaker(bind=engine)
     __factory = orm.sessionmaker(binds={CardsBase: base_engines["cards"], DecksBase: base_engines["decks"]})
 
     create_bases()
@@ -131,6 +129,7 @@ def choose_deck(name):
         deck = session.query(Decks).filter(name == Decks.name).first().cards
         session.commit()
         return [int(card_id) for card_id in deck.split(";")]
+
 
 def get_decks(player):
     global_init("cards")
@@ -227,6 +226,7 @@ def create_card(params):
         conditional = None
     tags = params[10].split(";")
     return Card(name, bp, name + ".png", armor, provision, card_type, fraction, tags, deployment, order, turn_end, conditional)
+
 
 def update_deck_name(player, new_name):
     global_init("decks")

@@ -1,8 +1,8 @@
 import pygame.image
 import pygame_gui
-from CONSTANTS import *
-from Storages import Deck
-from Cards_Descriptions import descriptions
+from constants import *
+from storages import Deck
+from cards_descriptions import descriptions
 
 
 class Menu:
@@ -23,7 +23,6 @@ class Menu:
         for button in self.buttons:
             button.kill()
 
-
     def draw_text(self, surf, text, size, x, y, color=(200, 200, 200)):
         """ Draw line of text in given coordinates"""
         if size == 20:
@@ -38,7 +37,7 @@ class GameUI:
     """ Menus that are shown during game """
 
     def __init__(self):
-        self.buttons_group = dict()
+        self.buttons_group = {}
         self.state = "pause"
         self.font20 = pygame.font.SysFont(FONT, 20, bold=True)
         self.font25 = pygame.font.SysFont(FONT, 25, bold=True)
@@ -58,7 +57,7 @@ class GameUI:
     def create_group(self, name):
         """ New group with its own manager"""
         if name not in self.buttons_group.keys():
-            self.buttons_group[name] = (pygame_gui.UIManager((SWIDTH, SHEIGHT), 'theme.json'), [])
+            self.buttons_group[name] = (pygame_gui.UIManager((SCREEN_WIDTH, SCREEN_HEIGHT), 'theme.json'), [])
 
 
 class Matchmaking(Menu):
@@ -155,7 +154,7 @@ class Constructor(Menu):
 
     def rename_deck(self, new_name):
         """ Update DECK list with new name and rename deck itself"""
-        from Data import update_deck_name
+        from data import update_deck_name
         if type(self.current_deck) == Deck:
             self.player.decks[new_name] = self.player.decks.pop(self.current_deck.name)
             update_deck_name(self.player, new_name)

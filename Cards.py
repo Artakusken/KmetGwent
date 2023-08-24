@@ -1,5 +1,5 @@
-from CONSTANTS import *
-from Cards_Descriptions import descriptions
+from constants import *
+from cards_descriptions import descriptions
 pygame.init()
 
 
@@ -41,27 +41,15 @@ class Card:
         self.hover = False
         # get description text (from py-file) and images (from pictures folder)
         self.description = self.form_text()
-        self.frame = self.load_card_image("Field\\cframe.png", "O")
-        self.Mimage = self.load_card_image(f'CardsPictures\\{self.fraction}\\' + 'M' + image_name, 'O')
-        self.MSimage = self.load_card_image(f'CardsPictures\\{self.fraction}\\' + 'MS' + image_name, 'O')
-        self.Simage = self.load_card_image(f'CardsPictures\\{self.fraction}\\' + 'S' + image_name, 'O')
+        self.frame = load_image("Field\\cframe.png", "O")
+        self.medium_image = load_image(f'CardsPictures\\{self.fraction}\\' + 'M' + image_name, 'O')
+        self.deck_image = load_image(f'CardsPictures\\{self.fraction}\\' + 'MS' + image_name, 'O')
+        self.small_image = load_image(f'CardsPictures\\{self.fraction}\\' + 'S' + image_name, 'O')
         # cards abilities
         self.deployment = d
         self.order = o
         self.turn_end = e
         self.conditional = c
-
-    def load_card_image(self, name, size):
-        """ Load images from files into game. Size O - original, M - medium, K - square(150x150), S - small"""
-        directory = os.path.join(name)
-        if os.path.isfile(directory):
-            if size == 'M':
-                image = pygame.transform.scale(pygame.image.load(directory), (MCARD_W, MCARD_H))
-            elif size == 'S':
-                image = pygame.transform.scale(pygame.image.load(directory), (SCARD_W, SCARD_H))
-            else:
-                image = pygame.image.load(directory)
-            return image
 
     def form_text(self):
         """ Form a text which consists of lines with length of TEXT_LENGTH symbols"""
@@ -121,21 +109,21 @@ class Card:
         """ Render card's image and set its collision"""
         if self.rect:
             if size == 'M':
-                screen.blit(self.Mimage, (x, y, MCARD_W, MCARD_H))
+                screen.blit(self.medium_image, (x, y, MEDIUM_CARD_WIDTH, MEDIUM_CARD_HEIGHT))
                 screen.blit(IMAGES["border_bronze_medium"], (x, y))
                 screen.blit(IMAGES["nilf_frame_medium"], (x - 8, y - 8))
                 if self.armor > 0:
                     screen.blit(IMAGES["armor_medium"], (x + 221, y))
                 self.display_cards_points(x, y, "M", screen, font)
             elif size == 'D':
-                screen.blit(self.MSimage, (x, y, LEADER_W, LEADER_H))
+                screen.blit(self.deck_image, (x, y, LEADER_WIDTH, LEADER_HEIGHT))
                 screen.blit(IMAGES["border_bronze_deck"], (x, y))
                 screen.blit(IMAGES["nilf_frame_deck"], (x - 5, y - 5))
                 if self.armor > 0:
                     screen.blit(IMAGES["armor_deck"], (x + 146, y))
                 self.display_cards_points(x, y, "D", screen, font)
             else:
-                screen.blit(self.Simage, (x, y, SCARD_W, SCARD_H))
+                screen.blit(self.small_image, (x, y, SMALL_CARD_WIDTH, SMALL_CARD_HEIGHT))
                 screen.blit(IMAGES["border_bronze_small"], (x, y))
                 screen.blit(IMAGES["nilf_frame_small"], (x - 2, y - 2))
                 if self.armor > 0:
@@ -179,7 +167,7 @@ class Card:
                     self.location.add_card(game_object, 1, coord)
                     game_object.deploy(card=game_object, field=game_field, row=self.location)
                     return None
-                elif isinstance(game_object, Leader) and game_object.status == "chosen extra ability" and game_object.rability > 0:
+                elif isinstance(game_object, Leader) and game_object.status == "chosen extra ability" and game_object.move_ability > 0:
                     if game_object.card_to_move1 is self:
                         self.status = "passive"
                         game_object.card_to_move1 = None
@@ -257,7 +245,7 @@ class Leader(pygame.sprite.Sprite):
         super().__init__()
         self.frames = []
         self.name = name
-        self.cur_frame = 0
+        self.current_frame = 0
         self.frames_number = frame_n
 
         if fraction == "NR":
@@ -267,15 +255,15 @@ class Leader(pygame.sprite.Sprite):
         elif fraction == "SC":
             self.fraction = "Скоятаэли"
 
-        self.rect = pygame.Rect(x, y, LEADER_W, LEADER_H)
+        self.rect = pygame.Rect(x, y, LEADER_WIDTH, LEADER_HEIGHT)
         # self.image_path = name + '.png'
         self.image = self.load_image("CardsPictures\\Лидеры\\" + self.name + ".png")
         self.load_image(animation, True)
         self.description = self.form_text()
-        self.rability = 3
+        self.move_ability = 3
         self.card_to_move1 = None
         self.card_to_move2 = None
-        self.mability = 1
+        self.leader_ability = 1
         self.status = "passive"
         self.frame = self.load_image('Field\\BigCardFrame.png')
 
@@ -286,13 +274,13 @@ class Leader(pygame.sprite.Sprite):
             for i in os.listdir(directory):
                 if os.path.isfile(directory + i):
                     image = pygame.image.load(directory + i)
-                    self.frames.append(pygame.transform.scale(image, (LEADER_W, LEADER_H)))
+                    self.frames.append(pygame.transform.scale(image, (LEADER_WIDTH, LEADER_HEIGHT)))
                 else:
                     print(f"Файл с изображением '{i}' не найден")
         else:
             directory = os.path.join(name)
             if os.path.isfile(directory):
-                image = pygame.transform.scale(pygame.image.load(directory), (MCARD_W, MCARD_H))
+                image = pygame.transform.scale(pygame.image.load(directory), (MEDIUM_CARD_WIDTH, MEDIUM_CARD_HEIGHT))
                 return image
 
     def form_text(self):
@@ -322,15 +310,15 @@ class Leader(pygame.sprite.Sprite):
         self.card_to_move1.status = "passive"
         self.card_to_move1 = None
         self.card_to_move2 = None
-        self.rability -= 1
+        self.move_ability -= 1
 
     def update(self):
         """ Pick next frame from frames and set is as current frame"""
-        self.cur_frame = (self.cur_frame + 1) % self.frames_number
+        self.current_frame = (self.current_frame + 1) % self.frames_number
 
     def on_click(self, game_field, click_type, game_object):
         """ Manage arguments and choose what actions to do"""
-        if self.status == "passive" and click_type == 1 and self.rability > 0:
+        if self.status == "passive" and click_type == 1 and self.move_ability > 0:
             self.status = "chosen extra ability"
             if type(game_object) == Card or type(game_object) == Leader:
                 game_object.status = 'passive'
@@ -355,5 +343,5 @@ class Leader(pygame.sprite.Sprite):
         """ Render images"""
         if self.status != 'passive':
             screen.blit(self.frame, (self.rect[0] - 10, self.rect[1] - 10))
-        screen.blit(self.frames[self.cur_frame], (self.rect[0], self.rect[1]))
+        screen.blit(self.frames[self.current_frame], (self.rect[0], self.rect[1]))
         screen.blit(IMAGES["border_golden_leader"], (self.rect[0], self.rect[1]))
