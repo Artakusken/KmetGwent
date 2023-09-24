@@ -614,12 +614,11 @@ class Field:
                 i.rect = (x + (c % 5 * 250), y + (350 * (c // 5)), LEADER_WIDTH, LEADER_HEIGHT)
                 c += 1
 
-    def back_to_game(self, storage, mulliagn_end=False):
+    def back_to_game(self, storage):
         """ Null cards' collisions and field chosen storage"""
         for i in storage.cards:
            i.rect = None
-        if mulliagn_end:
-            self.chosen_storage = None
+        self.chosen_storage = None
 
     def draw_end(self):
         """ Result is displayed, when game ends"""

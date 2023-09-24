@@ -101,6 +101,10 @@ class Constructor(Menu):
         self.decks_drop_box = pygame_gui.elements.UIDropDownMenu(self.decks.keys(), manager=self.manager,
                                                                  relative_rect=pygame.Rect((480, 20), (250, 75)),
                                                                  starting_option=player.deck.name)
+        self.cards_drop_box = pygame_gui.elements.UIDropDownMenu(["Нет карты"], manager=self.manager,
+                                                                 relative_rect=pygame.Rect((740, 20), (250, 75)),
+                                                                 starting_option=list(self.cards.keys())[0])
+        # TODO ↑ fill drop box with ALL game cards, so then there will be no need to update box
         self.max_provision = 150
         self.provision = 0
 
@@ -113,7 +117,8 @@ class Constructor(Menu):
         self.screen = screen
         self.player = player
 
-    def full_box(self):
+    def update_cards_box(self):
+        """ cards_drop_box recreate itself with all deck cards """
         self.cards_drop_box = pygame_gui.elements.UIDropDownMenu(self.cards.keys(), manager=self.manager,
                                                                  relative_rect=pygame.Rect((740, 20), (250, 75)),
                                                                  starting_option=list(self.cards.keys())[0])

@@ -12,7 +12,7 @@ ROW_SIZE = 9
 GET_CARDS = 4
 TEXT_LENGTH = 26
 FONT = 'Georgia'
-CLICKABLE = []
+CLICKABLE = []  # all clickable objects (clickable means that object can do some action when clicked, or hovered), cards, decks, leaders, rows
 IMAGES = {}
 
 
